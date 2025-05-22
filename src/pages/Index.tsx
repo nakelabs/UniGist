@@ -1,6 +1,6 @@
 
-import { useState, useEffect } from 'react';
-import { Heart, ArrowUp, ArrowDown } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Heart, ArrowUp, ArrowDown, Mic, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Post {
@@ -10,6 +10,7 @@ interface Post {
   upvotes: number;
   downvotes: number;
   isNew: boolean;
+  audioUrl?: string;
 }
 
 const Index = () => {
@@ -41,11 +42,16 @@ const Index = () => {
   ]);
   const [newConfession, setNewConfession] = useState('');
   const [nextId, setNextId] = useState(4);
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<BlobPart[]>([]);
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newConfession.trim()) return;
+    if (!newConfession.trim() && !audioUrl) return;
 
     const newPost: Post = {
       id: nextId,
@@ -53,11 +59,14 @@ const Index = () => {
       timestamp: new Date(),
       upvotes: 0,
       downvotes: 0,
-      isNew: true
+      isNew: true,
+      audioUrl: audioUrl || undefined
     };
 
     setPosts([newPost, ...posts]);
     setNewConfession('');
+    setAudioUrl(null);
+    setAudioBlob(null);
     setNextId(nextId + 1);
 
     // Mark as no longer new after 10 seconds
@@ -71,6 +80,76 @@ const Index = () => {
       title: "Confession Posted! 🎉",
       description: "Your secret is now part of the digital void...",
     });
+  };
+
+  const handleStartRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+      const mediaRecorder = new MediaRecorder(stream);
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        const url = URL.createObjectURL(audioBlob);
+        setAudioBlob(audioBlob);
+        setAudioUrl(url);
+
+        // Release microphone
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start();
+      setIsRecording(true);
+      
+      toast({
+        title: "Recording Started! 🎤",
+        description: "Spill your audio tea...",
+      });
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+      toast({
+        title: "Microphone Error 🔇",
+        description: "Couldn't access your microphone. Check permissions.",
+      });
+    }
+  };
+
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      
+      toast({
+        title: "Recording Completed! 🔊",
+        description: "Preview your audio confession before posting.",
+      });
+    }
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith('audio/')) {
+      const url = URL.createObjectURL(file);
+      setAudioUrl(url);
+      setAudioBlob(file);
+      
+      toast({
+        title: "Audio Uploaded! 🎧",
+        description: "Preview your audio confession before posting.",
+      });
+    } else if (file) {
+      toast({
+        title: "Invalid File! ⚠️",
+        description: "Please upload an audio file.",
+      });
+    }
   };
 
   const handleVote = (id: number, type: 'up' | 'down') => {
@@ -141,6 +220,41 @@ const Index = () => {
               className="retro-input w-full h-32 resize-none"
               maxLength={500}
             />
+            
+            {/* Audio Recording and Upload Section */}
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-3 items-center">
+                <button
+                  type="button"
+                  onClick={isRecording ? handleStopRecording : handleStartRecording}
+                  className={`retro-button flex items-center ${isRecording ? 'bg-retro-hot-pink animate-pulse' : ''}`}
+                >
+                  <Mic className="w-4 h-4 mr-2" />
+                  {isRecording ? 'STOP RECORDING' : 'RECORD AUDIO'}
+                </button>
+                
+                <label className="retro-button flex items-center cursor-pointer">
+                  <Upload className="w-4 h-4 mr-2" />
+                  UPLOAD AUDIO
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+              
+              {audioUrl && (
+                <div className="border-2 border-retro-electric-blue p-3 bg-black/70">
+                  <p className="text-retro-cyber-yellow font-cyber text-sm mb-2">Audio Preview:</p>
+                  <audio controls src={audioUrl} className="w-full">
+                    Your browser does not support audio playback
+                  </audio>
+                </div>
+              )}
+            </div>
+            
             <div className="flex justify-between items-center">
               <span className="font-cyber text-sm text-retro-electric-blue">
                 {500 - newConfession.length} characters left
@@ -148,7 +262,7 @@ const Index = () => {
               <button
                 type="submit"
                 className="retro-button"
-                disabled={!newConfession.trim()}
+                disabled={!newConfession.trim() && !audioUrl}
               >
                 CONFESS NOW! 🚀
               </button>
@@ -190,6 +304,14 @@ const Index = () => {
               <p className="font-cyber text-retro-neon-green mb-4 leading-relaxed">
                 {post.content}
               </p>
+              
+              {post.audioUrl && (
+                <div className="mb-4">
+                  <audio controls src={post.audioUrl} className="w-full">
+                    Your browser does not support audio playback
+                  </audio>
+                </div>
+              )}
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
