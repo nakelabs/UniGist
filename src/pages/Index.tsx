@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { Heart, ArrowUp, ArrowDown, Mic, Upload } from 'lucide-react';
+import { Heart, ArrowUp, ArrowDown, Mic, Upload, Image, Video } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Post {
@@ -11,6 +11,8 @@ interface Post {
   downvotes: number;
   isNew: boolean;
   audioUrl?: string;
+  videoUrl?: string;
+  imageUrl?: string;
 }
 
 const Index = () => {
@@ -42,16 +44,40 @@ const Index = () => {
   ]);
   const [newConfession, setNewConfession] = useState('');
   const [nextId, setNextId] = useState(4);
+  
+  // Audio recording states
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
+  
+  // Video recording states
+  const [isRecordingVideo, setIsRecordingVideo] = useState(false);
+  const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const videoMediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const videoChunksRef = useRef<BlobPart[]>([]);
+  const videoPreviewRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  
+  // Image upload state
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  
   const { toast } = useToast();
+
+  // Clean up media streams when component unmounts
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newConfession.trim() && !audioUrl) return;
+    if (!newConfession.trim() && !audioUrl && !videoUrl && !imageUrl) return;
 
     const newPost: Post = {
       id: nextId,
@@ -60,13 +86,18 @@ const Index = () => {
       upvotes: 0,
       downvotes: 0,
       isNew: true,
-      audioUrl: audioUrl || undefined
+      audioUrl: audioUrl || undefined,
+      videoUrl: videoUrl || undefined,
+      imageUrl: imageUrl || undefined
     };
 
     setPosts([newPost, ...posts]);
     setNewConfession('');
     setAudioUrl(null);
     setAudioBlob(null);
+    setVideoUrl(null);
+    setVideoBlob(null);
+    setImageUrl(null);
     setNextId(nextId + 1);
 
     // Mark as no longer new after 10 seconds
@@ -133,6 +164,69 @@ const Index = () => {
     }
   };
 
+  const handleStartVideoRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      videoChunksRef.current = [];
+      streamRef.current = stream;
+      
+      // Show video preview
+      if (videoPreviewRef.current) {
+        videoPreviewRef.current.srcObject = stream;
+        videoPreviewRef.current.play();
+      }
+      
+      const mediaRecorder = new MediaRecorder(stream);
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          videoChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const videoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
+        const url = URL.createObjectURL(videoBlob);
+        setVideoBlob(videoBlob);
+        setVideoUrl(url);
+
+        // Stop preview and release camera
+        if (videoPreviewRef.current) {
+          videoPreviewRef.current.srcObject = null;
+        }
+        stream.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      };
+
+      videoMediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start();
+      setIsRecordingVideo(true);
+      
+      toast({
+        title: "Video Recording Started! 🎬",
+        description: "Action! Your drama is being captured...",
+      });
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      toast({
+        title: "Camera Error 📵",
+        description: "Couldn't access your camera. Check permissions.",
+      });
+    }
+  };
+
+  const handleStopVideoRecording = () => {
+    if (videoMediaRecorderRef.current) {
+      videoMediaRecorderRef.current.stop();
+      setIsRecordingVideo(false);
+      
+      toast({
+        title: "Video Recording Completed! 🎥",
+        description: "Preview your video confession before posting.",
+      });
+    }
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('audio/')) {
@@ -144,10 +238,27 @@ const Index = () => {
         title: "Audio Uploaded! 🎧",
         description: "Preview your audio confession before posting.",
       });
+    } else if (file && file.type.startsWith('video/')) {
+      const url = URL.createObjectURL(file);
+      setVideoUrl(url);
+      setVideoBlob(file);
+      
+      toast({
+        title: "Video Uploaded! 🎬",
+        description: "Preview your video confession before posting.",
+      });
+    } else if (file && file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      setImageUrl(url);
+      
+      toast({
+        title: "Image Uploaded! 🖼️",
+        description: "Preview your image confession before posting.",
+      });
     } else if (file) {
       toast({
         title: "Invalid File! ⚠️",
-        description: "Please upload an audio file.",
+        description: "Please upload an audio, video, or image file.",
       });
     }
   };
@@ -221,38 +332,114 @@ const Index = () => {
               maxLength={500}
             />
             
-            {/* Audio Recording and Upload Section */}
-            <div className="space-y-3">
-              <div className="flex flex-wrap gap-3 items-center">
-                <button
-                  type="button"
-                  onClick={isRecording ? handleStopRecording : handleStartRecording}
-                  className={`retro-button flex items-center ${isRecording ? 'bg-retro-hot-pink animate-pulse' : ''}`}
-                >
-                  <Mic className="w-4 h-4 mr-2" />
-                  {isRecording ? 'STOP RECORDING' : 'RECORD AUDIO'}
-                </button>
-                
-                <label className="retro-button flex items-center cursor-pointer">
-                  <Upload className="w-4 h-4 mr-2" />
-                  UPLOAD AUDIO
-                  <input
-                    type="file"
-                    accept="audio/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-              
-              {audioUrl && (
-                <div className="border-2 border-retro-electric-blue p-3 bg-black/70">
-                  <p className="text-retro-cyber-yellow font-cyber text-sm mb-2">Audio Preview:</p>
-                  <audio controls src={audioUrl} className="w-full">
-                    Your browser does not support audio playback
-                  </audio>
+            {/* Media Recording and Upload Section */}
+            <div className="space-y-4">
+              {/* Audio controls */}
+              <div className="p-3 border-2 border-retro-electric-blue bg-black/70">
+                <h3 className="text-retro-cyber-yellow font-cyber text-sm mb-3">Audio Confession:</h3>
+                <div className="flex flex-wrap gap-3 items-center">
+                  <button
+                    type="button"
+                    onClick={isRecording ? handleStopRecording : handleStartRecording}
+                    className={`retro-button flex items-center ${isRecording ? 'bg-retro-hot-pink animate-pulse' : ''}`}
+                    disabled={isRecordingVideo}
+                  >
+                    <Mic className="w-4 h-4 mr-2" />
+                    {isRecording ? 'STOP RECORDING' : 'RECORD AUDIO'}
+                  </button>
+                  
+                  <label className="retro-button flex items-center cursor-pointer">
+                    <Upload className="w-4 h-4 mr-2" />
+                    UPLOAD AUDIO
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
-              )}
+                
+                {audioUrl && (
+                  <div className="mt-3">
+                    <p className="text-retro-cyber-yellow font-cyber text-xs mb-1">Audio Preview:</p>
+                    <audio controls src={audioUrl} className="w-full">
+                      Your browser does not support audio playback
+                    </audio>
+                  </div>
+                )}
+              </div>
+
+              {/* Video controls */}
+              <div className="p-3 border-2 border-retro-hot-pink bg-black/70">
+                <h3 className="text-retro-cyber-yellow font-cyber text-sm mb-3">Video Confession:</h3>
+                <div className="flex flex-wrap gap-3 items-center">
+                  <button
+                    type="button"
+                    onClick={isRecordingVideo ? handleStopVideoRecording : handleStartVideoRecording}
+                    className={`retro-button flex items-center ${isRecordingVideo ? 'bg-retro-hot-pink animate-pulse' : ''}`}
+                    disabled={isRecording}
+                  >
+                    <Video className="w-4 h-4 mr-2" />
+                    {isRecordingVideo ? 'STOP RECORDING' : 'RECORD VIDEO'}
+                  </button>
+                  
+                  <label className="retro-button flex items-center cursor-pointer">
+                    <Upload className="w-4 h-4 mr-2" />
+                    UPLOAD VIDEO
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {isRecordingVideo && (
+                  <div className="mt-3 border-2 border-retro-neon-green p-2">
+                    <p className="text-retro-hot-pink font-cyber text-xs mb-1">📹 LIVE RECORDING:</p>
+                    <video 
+                      ref={videoPreviewRef} 
+                      className="w-full h-auto" 
+                      muted 
+                    />
+                  </div>
+                )}
+                
+                {videoUrl && !isRecordingVideo && (
+                  <div className="mt-3">
+                    <p className="text-retro-cyber-yellow font-cyber text-xs mb-1">Video Preview:</p>
+                    <video controls src={videoUrl} className="w-full h-auto">
+                      Your browser does not support video playback
+                    </video>
+                  </div>
+                )}
+              </div>
+
+              {/* Image upload */}
+              <div className="p-3 border-2 border-retro-cyber-yellow bg-black/70">
+                <h3 className="text-retro-cyber-yellow font-cyber text-sm mb-3">Image Confession:</h3>
+                <div className="flex flex-wrap gap-3 items-center">
+                  <label className="retro-button flex items-center cursor-pointer">
+                    <Image className="w-4 h-4 mr-2" />
+                    UPLOAD IMAGE
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                
+                {imageUrl && (
+                  <div className="mt-3">
+                    <p className="text-retro-cyber-yellow font-cyber text-xs mb-1">Image Preview:</p>
+                    <img src={imageUrl} alt="Confession" className="max-w-full h-auto border-2 border-retro-neon-green" />
+                  </div>
+                )}
+              </div>
             </div>
             
             <div className="flex justify-between items-center">
@@ -262,7 +449,7 @@ const Index = () => {
               <button
                 type="submit"
                 className="retro-button"
-                disabled={!newConfession.trim() && !audioUrl}
+                disabled={!newConfession.trim() && !audioUrl && !videoUrl && !imageUrl}
               >
                 CONFESS NOW! 🚀
               </button>
@@ -301,9 +488,25 @@ const Index = () => {
                 </div>
               </div>
 
-              <p className="font-cyber text-retro-neon-green mb-4 leading-relaxed">
-                {post.content}
-              </p>
+              {post.content && (
+                <p className="font-cyber text-retro-neon-green mb-4 leading-relaxed">
+                  {post.content}
+                </p>
+              )}
+              
+              {post.imageUrl && (
+                <div className="mb-4 border-2 border-retro-hot-pink p-2">
+                  <img src={post.imageUrl} alt="Confession" className="max-w-full h-auto" />
+                </div>
+              )}
+              
+              {post.videoUrl && (
+                <div className="mb-4 border-2 border-retro-electric-blue p-2">
+                  <video controls src={post.videoUrl} className="w-full">
+                    Your browser does not support video playback
+                  </video>
+                </div>
+              )}
               
               {post.audioUrl && (
                 <div className="mb-4">
