@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,21 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Retro color palette
+				retro: {
+					'neon-green': '#00ff00',
+					'hot-pink': '#ff1493',
+					'cyber-yellow': '#ffff00',
+					'electric-blue': '#0080ff',
+					'neon-purple': '#8a2be2',
+					'lime': '#32cd32',
+					'magenta': '#ff00ff'
 				}
+			},
+			fontFamily: {
+				'pixel': ['Press Start 2P', 'monospace'],
+				'cyber': ['Orbitron', 'sans-serif'],
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -84,11 +99,27 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'blink': {
+					'0%, 50%': { opacity: '1' },
+					'51%, 100%': { opacity: '0' }
+				},
+				'glow': {
+					'0%, 100%': { textShadow: '0 0 5px currentColor' },
+					'50%': { textShadow: '0 0 20px currentColor, 0 0 30px currentColor' }
+				},
+				'bounce-retro': {
+					'0%, 20%, 50%, 80%, 100%': { transform: 'translateY(0)' },
+					'40%': { transform: 'translateY(-10px)' },
+					'60%': { transform: 'translateY(-5px)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'blink': 'blink 1s infinite',
+				'glow': 'glow 2s ease-in-out infinite alternate',
+				'bounce-retro': 'bounce-retro 2s infinite'
 			}
 		}
 	},

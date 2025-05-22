@@ -1,91 +1,47 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 0 0% 5%;
+    --foreground: 120 100% 80%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 280 100% 10%;
+    --card-foreground: 120 100% 90%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 280 100% 8%;
+    --popover-foreground: 120 100% 90%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 280 100% 50%;
+    --primary-foreground: 0 0% 0%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 120 100% 50%;
+    --secondary-foreground: 0 0% 0%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 280 50% 20%;
+    --muted-foreground: 120 50% 70%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 60 100% 50%;
+    --accent-foreground: 0 0% 0%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 280 100% 30%;
+    --input: 280 100% 20%;
+    --ring: 120 100% 50%;
 
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
@@ -96,6 +52,85 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-cyber;
+    background-image: 
+      radial-gradient(circle at 20% 20%, rgba(0, 255, 0, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(255, 20, 147, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 40% 60%, rgba(138, 43, 226, 0.1) 0%, transparent 50%);
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .retro-button {
+    @apply bg-gradient-to-r from-retro-hot-pink to-retro-neon-purple text-white font-pixel text-xs px-4 py-2 border-2 border-retro-neon-green transform transition-all duration-200 hover:scale-105 hover:rotate-1 active:scale-95;
+    box-shadow: 3px 3px 0px theme('colors.retro.cyber-yellow'), inset 0 0 10px rgba(255, 255, 255, 0.2);
+  }
+  
+  .retro-button:hover {
+    box-shadow: 5px 5px 0px theme('colors.retro.cyber-yellow'), inset 0 0 15px rgba(255, 255, 255, 0.3);
+  }
+
+  .retro-card {
+    @apply bg-gradient-to-br from-purple-900/90 to-blue-900/90 border-2 border-retro-neon-green p-4 rounded-none;
+    box-shadow: 
+      0 0 20px theme('colors.retro.neon-green'),
+      inset 0 0 20px rgba(0, 255, 0, 0.1);
+  }
+
+  .retro-input {
+    @apply bg-black border-2 border-retro-electric-blue text-retro-neon-green font-cyber p-3 rounded-none;
+    box-shadow: inset 0 0 10px rgba(0, 128, 255, 0.3);
+  }
+
+  .retro-input:focus {
+    @apply outline-none border-retro-cyber-yellow;
+    box-shadow: 
+      inset 0 0 10px rgba(255, 255, 0, 0.3),
+      0 0 15px theme('colors.retro.cyber-yellow');
+  }
+
+  .glitch-text {
+    position: relative;
+  }
+
+  .glitch-text::before,
+  .glitch-text::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .glitch-text::before {
+    animation: glitch-1 0.3s infinite;
+    color: theme('colors.retro.hot-pink');
+    z-index: -1;
+  }
+
+  .glitch-text::after {
+    animation: glitch-2 0.3s infinite;
+    color: theme('colors.retro.electric-blue');
+    z-index: -2;
+  }
+
+  @keyframes glitch-1 {
+    0%, 14%, 15%, 49%, 50%, 99%, 100% {
+      transform: translate(0, 0);
+    }
+    15%, 49% {
+      transform: translate(-2px, 0);
+    }
+  }
+
+  @keyframes glitch-2 {
+    0%, 20%, 21%, 62%, 63%, 99%, 100% {
+      transform: translate(0, 0);
+    }
+    21%, 62% {
+      transform: translate(2px, 0);
+    }
   }
 }
