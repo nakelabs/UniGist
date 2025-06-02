@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Heart, ArrowUp, ArrowDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import PostItem from './PostItem';
@@ -21,19 +20,83 @@ interface PostFeedProps {
   setPosts: React.Dispatch<React.SetStateAction<Post[]>>;
 }
 
+// Track user votes
+interface UserVotes {
+  [postId: number]: {
+    upvoted: boolean;
+    downvoted: boolean;
+  }
+}
+
 const PostFeed = ({ posts, setPosts }: PostFeedProps) => {
   const { toast } = useToast();
+  const [userVotes, setUserVotes] = useState<UserVotes>({});
+  
+  // Load user votes from localStorage on component mount
+  useEffect(() => {
+    const savedVotes = localStorage.getItem('userVotes');
+    if (savedVotes) {
+      setUserVotes(JSON.parse(savedVotes));
+    }
+  }, []);
+
+  // Save user votes to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('userVotes', JSON.stringify(userVotes));
+  }, [userVotes]);
 
   const handleVote = (id: number, type: 'up' | 'down') => {
-    setPosts(prev => prev.map(post => 
-      post.id === id 
-        ? { 
-            ...post, 
-            upvotes: type === 'up' ? post.upvotes + 1 : post.upvotes,
-            downvotes: type === 'down' ? post.downvotes + 1 : post.downvotes
+    // Check if user has already voted on this post
+    const postVotes = userVotes[id] || { upvoted: false, downvoted: false };
+    
+    // If already voted this type, show a toast and return
+    if ((type === 'up' && postVotes.upvoted) || (type === 'down' && postVotes.downvoted)) {
+      toast({
+        title: "Already voted",
+        description: "You can only vote once per post",
+      });
+      return;
+    }
+    
+    // If previously voted the other type, remove that vote first
+    const updatePosts = prev => prev.map(post => {
+      if (post.id === id) {
+        let updatedUpvotes = post.upvotes;
+        let updatedDownvotes = post.downvotes;
+        
+        if (type === 'up') {
+          updatedUpvotes += 1;
+          // If previously downvoted, remove that downvote
+          if (postVotes.downvoted) {
+            updatedDownvotes = Math.max(0, updatedDownvotes - 1);
           }
-        : post
-    ));
+        } else {
+          updatedDownvotes += 1;
+          // If previously upvoted, remove that upvote
+          if (postVotes.upvoted) {
+            updatedUpvotes = Math.max(0, updatedUpvotes - 1);
+          }
+        }
+        
+        return { 
+          ...post, 
+          upvotes: updatedUpvotes,
+          downvotes: updatedDownvotes
+        };
+      }
+      return post;
+    });
+    
+    setPosts(updatePosts);
+    
+    // Update user votes state
+    setUserVotes(prev => ({
+      ...prev,
+      [id]: {
+        upvoted: type === 'up' ? true : false,
+        downvoted: type === 'down' ? true : false,
+      }
+    }));
   };
 
   const handleReport = (id: number) => {
@@ -66,6 +129,7 @@ const PostFeed = ({ posts, setPosts }: PostFeedProps) => {
           onVote={handleVote}
           onReport={handleReport}
           formatTimeAgo={formatTimeAgo}
+          userVotes={userVotes[post.id] || { upvoted: false, downvoted: false }}
         />
       ))}
     </div>

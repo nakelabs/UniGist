@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Heart, ArrowUp, ArrowDown } from 'lucide-react';
 import { Post } from './PostFeed';
@@ -8,9 +7,10 @@ interface PostItemProps {
   onVote: (id: number, type: 'up' | 'down') => void;
   onReport: (id: number) => void;
   formatTimeAgo: (date: Date) => string;
+  userVotes: { upvoted: boolean; downvoted: boolean };
 }
 
-const PostItem = ({ post, onVote, onReport, formatTimeAgo }: PostItemProps) => {
+const PostItem = ({ post, onVote, onReport, formatTimeAgo, userVotes }: PostItemProps) => {
   return (
     <div key={post.id} className="retro-card relative">
       {post.isNew && (
