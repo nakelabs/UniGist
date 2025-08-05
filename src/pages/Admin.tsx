@@ -1,21 +1,12 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useReports } from '@/hooks/useReports';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-
-interface Report {
-  id: string;
-  type: 'post' | 'comment';
-  targetId: string;
-  reason: string;
-  customReason?: string;
-  timestamp: number;
-  content: string;
-  status: 'pending' | 'resolved' | 'dismissed';
-}
 
 interface AdminStats {
   totalPosts: number;
@@ -27,14 +18,13 @@ interface AdminStats {
 export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
-  const [reports, setReports] = useState<Report[]>([]);
+  const { reports, updateReportStatus, deleteContent } = useReports();
   const [stats, setStats] = useState<AdminStats>({
     totalPosts: 0,
     totalComments: 0,
     totalReports: 0,
     pendingReports: 0
   });
-  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   // Check if already authenticated
@@ -104,83 +94,57 @@ export default function Admin() {
   };
 
   const loadAdminData = () => {
-    // Load reports from localStorage
-    const storedReports = localStorage.getItem('reportedContent');
-    let reportData = [];
-    if (storedReports) {
-      reportData = JSON.parse(storedReports);
-      setReports(reportData);
-    }
+    const fetchStats = async () => {
+      try {
+        // Get confession count
+        const { count: confessionCount } = await supabase
+          .from('confessions')
+          .select('*', { count: 'exact', head: true });
 
-    // Load posts and calculate stats
-    const storedPosts = localStorage.getItem('confessions');
-    const posts = storedPosts ? JSON.parse(storedPosts) : [];
-    
-    let totalComments = 0;
-    posts.forEach((post: any) => {
-      if (post.comments) {
-        totalComments += post.comments.length;
-      }
-    });
+        // Get comment count
+        const { count: commentCount } = await supabase
+          .from('comments')
+          .select('*', { count: 'exact', head: true });
 
-    const pendingReports = reportData.filter((r: any) => r.status === 'pending').length;
+        // Get report counts
+        const { count: totalReportCount } = await supabase
+          .from('reports')
+          .select('*', { count: 'exact', head: true });
 
-    setStats({
-      totalPosts: posts.length,
-      totalComments,
-      totalReports: reportData.length,
-      pendingReports
-    });
-  };
+        const { count: pendingReportCount } = await supabase
+          .from('reports')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
 
-  const handleReportAction = (reportId: string, action: 'resolve' | 'dismiss') => {
-    const updatedReports = reports.map(report => 
-      report.id === reportId 
-        ? { ...report, status: action === 'resolve' ? 'resolved' as const : 'dismissed' as const }
-        : report
-    );
-    
-    setReports(updatedReports);
-    localStorage.setItem('reportedContent', JSON.stringify(updatedReports));
-    
-    // Update stats immediately
-    setTimeout(() => loadAdminData(), 100);
-  };
-
-  const deleteContent = (report: Report) => {
-    setIsDeleting(report.id);
-    
-    if (report.type === 'post') {
-      // Delete post
-      const storedPosts = localStorage.getItem('confessions');
-      if (storedPosts) {
-        const posts = JSON.parse(storedPosts);
-        const updatedPosts = posts.filter((post: any) => post.id.toString() !== report.targetId);
-        localStorage.setItem('confessions', JSON.stringify(updatedPosts));
-      }
-    } else {
-      // Delete comment
-      const storedPosts = localStorage.getItem('confessions');
-      if (storedPosts) {
-        const posts = JSON.parse(storedPosts);
-        const updatedPosts = posts.map((post: any) => {
-          if (post.comments) {
-            post.comments = post.comments.filter((comment: any) => comment.id.toString() !== report.targetId);
-          }
-          return post;
+        setStats({
+          totalPosts: confessionCount || 0,
+          totalComments: commentCount || 0,
+          totalReports: totalReportCount || 0,
+          pendingReports: pendingReportCount || 0
         });
-        localStorage.setItem('confessions', JSON.stringify(updatedPosts));
+      } catch (error) {
+        console.error('Error fetching admin stats:', error);
       }
-    }
-    
-    // Mark report as resolved and reload stats
-    handleReportAction(report.id, 'resolve');
-    
-    // Reload stats after content deletion
-    setTimeout(() => {
+    };
+
+    fetchStats();
+  };
+
+  const handleReportAction = async (reportId: string, action: 'resolve' | 'dismiss') => {
+    await updateReportStatus(reportId, action);
+    loadAdminData();
+  };
+
+  const handleDeleteContent = async (report: any) => {
+    setIsDeleting(report.id);
+    try {
+      await deleteContent(report);
       loadAdminData();
+    } catch (error) {
+      console.error('Error deleting content:', error);
+    } finally {
       setIsDeleting(null);
-    }, 100);
+    }
   };
 
   if (!isAuthenticated) {
@@ -333,21 +297,14 @@ export default function Admin() {
                     <div>
                       <p className="text-xs text-green-600 font-mono mb-1">REASON:</p>
                       <p className="text-green-300 font-mono text-sm">{report.reason}</p>
-                      {report.customReason && (
+                      {report.custom_reason && (
                         <>
                           <p className="text-xs text-green-600 font-mono mb-1 mt-2">CUSTOM REASON:</p>
-                          <p className="text-green-300 font-mono text-sm">{report.customReason}</p>
+                          <p className="text-green-300 font-mono text-sm">{report.custom_reason}</p>
                         </>
                       )}
                     </div>
                     
-                    <div>
-                      <p className="text-xs text-green-600 font-mono mb-1">CONTENT:</p>
-                      <div className="bg-gray-900 border border-green-700 p-3 rounded">
-                        <p className="text-green-200 font-mono text-sm">{report.content}</p>
-                      </div>
-                    </div>
-
                     {report.status === 'pending' && (
                       <div className="flex gap-2">
                         <Button
@@ -369,7 +326,7 @@ export default function Admin() {
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
-                              variant="outline"
+                              onClick={() => handleDeleteContent(report)}
                               size="sm"
                               className="border-red-500 text-red-400 hover:bg-red-900 font-mono"
                             >

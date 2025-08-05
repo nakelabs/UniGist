@@ -1,7 +1,6 @@
 
 import { useState, useRef } from 'react';
-import { Mic, Upload, Image, Video, Tag, X } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Tag, X } from 'lucide-react';
 import AudioRecorder from './AudioRecorder';
 import VideoRecorder from './VideoRecorder';
 import ImageUploader from './ImageUploader';
@@ -13,14 +12,14 @@ interface ConfessionFormProps {
     videoUrl?: string;
     imageUrl?: string;
     tags?: string[];
-  }) => void;
+  }) => Promise<void>;
 }
 
 const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
   const [newConfession, setNewConfession] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [currentTag, setCurrentTag] = useState('');
-  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Audio recording states
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -38,11 +37,6 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
     if (trimmedTag && !tags.includes(trimmedTag) && tags.length < 5) {
       setTags([...tags, trimmedTag]);
       setCurrentTag('');
-    } else if (tags.length >= 5) {
-      toast({
-        title: "Tag Limit Reached! 🏷️",
-        description: "You can only add up to 5 tags per confession.",
-      });
     }
   };
 
@@ -57,31 +51,34 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newConfession.trim() && !audioUrl && !videoUrl && !imageUrl) return;
 
-    onSubmit({
-      content: newConfession,
-      audioUrl: audioUrl || undefined,
-      videoUrl: videoUrl || undefined,
-      imageUrl: imageUrl || undefined,
-      tags: tags
-    });
+    setIsSubmitting(true);
+    try {
+      await onSubmit({
+        content: newConfession,
+        audioUrl: audioUrl || undefined,
+        videoUrl: videoUrl || undefined,
+        imageUrl: imageUrl || undefined,
+        tags: tags
+      });
 
-    setNewConfession('');
-    setTags([]);
-    setCurrentTag('');
-    setAudioUrl(null);
-    setAudioBlob(null);
-    setVideoUrl(null);
-    setVideoBlob(null);
-    setImageUrl(null);
-
-    toast({
-      title: "Confession Posted! 🎉",
-      description: "Your secret is now part of the digital void...",
-    });
+      // Reset form
+      setNewConfession('');
+      setTags([]);
+      setCurrentTag('');
+      setAudioUrl(null);
+      setAudioBlob(null);
+      setVideoUrl(null);
+      setVideoBlob(null);
+      setImageUrl(null);
+    } catch (error) {
+      console.error('Error submitting confession:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -223,9 +220,9 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
           <button
             type="submit"
             className="retro-button"
-            disabled={!newConfession.trim() && !audioUrl && !videoUrl && !imageUrl}
+            disabled={(!newConfession.trim() && !audioUrl && !videoUrl && !imageUrl) || isSubmitting}
           >
-            CONFESS NOW! 🚀
+            {isSubmitting ? 'POSTING...' : 'CONFESS NOW! 🚀'}
           </button>
         </div>
       </form>

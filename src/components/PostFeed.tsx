@@ -1,173 +1,44 @@
-import { useState, useEffect } from 'react';
-import { Heart, ArrowUp, ArrowDown, Filter, Clock, TrendingUp, Search, X, Tag } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
+import { Filter, Clock, TrendingUp, Search, X, Tag } from 'lucide-react';
 import PostItem from './PostItem';
 import ReportModal from './ReportModal';
+import { ConfessionWithComments } from '@/hooks/useConfessions';
 
-export interface Comment {
-  id: number;
-  postId: number;
-  content: string;
-  timestamp: Date;
-  upvotes: number;
-  downvotes: number;
-  isAnonymous: boolean;
-  username?: string; // For non-anonymous comments
-}
-
-export interface Post {
-  id: number;
-  content: string;
-  timestamp: Date;
-  upvotes: number;
-  downvotes: number;
-  isNew: boolean;
-  audioUrl?: string;
-  videoUrl?: string;
-  imageUrl?: string;
-  comments: Comment[];
-  showComments: boolean;
-  tags: string[];
+interface UserVotes {
+  confessions: Record<string, { upvoted: boolean; downvoted: boolean }>;
+  comments: Record<string, { upvoted: boolean; downvoted: boolean }>;
 }
 
 interface PostFeedProps {
-  posts: Post[];
-  setPosts: React.Dispatch<React.SetStateAction<Post[]>>;
+  posts: ConfessionWithComments[];
+  userVotes: UserVotes;
+  onVote: (id: string, type: 'up' | 'down', isComment?: boolean) => Promise<boolean>;
+  onReport: (id: string) => void;
+  onToggleComments: (confessionId: string) => void;
+  onAddComment: (confessionId: string, content: string, isAnonymous?: boolean) => Promise<void>;
+  onCreateReport: (targetType: 'confession' | 'comment', targetId: string, reason: string, customReason?: string) => Promise<any>;
 }
 
 type SortOption = 'newest' | 'most-upvoted' | 'most-controversial';
 
-// Track user votes (both posts and comments)
-interface UserVotes {
-  posts: {
-    [postId: number]: {
-      upvoted: boolean;
-      downvoted: boolean;
-    }
-  };
-  comments: {
-    [commentId: number]: {
-      upvoted: boolean;
-      downvoted: boolean;
-    }
-  };
-}
-
-const PostFeed = ({ posts, setPosts }: PostFeedProps) => {
-  const { toast } = useToast();
-  const [userVotes, setUserVotes] = useState<UserVotes>({
-    posts: {},
-    comments: {}
-  });
+const PostFeed = ({ 
+  posts, 
+  userVotes, 
+  onVote, 
+  onReport, 
+  onToggleComments, 
+  onAddComment, 
+  onCreateReport 
+}: PostFeedProps) => {
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('');
   const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [reportingPostId, setReportingPostId] = useState<number | null>(null);
-  const [reportingCommentId, setReportingCommentId] = useState<number | null>(null);
+  const [reportingPostId, setReportingPostId] = useState<string | null>(null);
+  const [reportingCommentId, setReportingCommentId] = useState<string | null>(null);
   const [isReportingComment, setIsReportingComment] = useState(false);
-  
-  // Load user votes from localStorage on component mount
-  useEffect(() => {
-    const savedVotes = localStorage.getItem('userVotes');
-    if (savedVotes) {
-      setUserVotes(JSON.parse(savedVotes));
-    }
-  }, []);
 
-  // Save user votes to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('userVotes', JSON.stringify(userVotes));
-  }, [userVotes]);
-
-  const handleVote = (id: number, type: 'up' | 'down', isComment: boolean = false, postId?: number) => {
-    // Check if user has already voted on this post/comment
-    const votes = isComment ? userVotes.comments : userVotes.posts;
-    const itemVotes = votes[id] || { upvoted: false, downvoted: false };
-    
-    // If already voted this type, show a toast and return
-    if ((type === 'up' && itemVotes.upvoted) || (type === 'down' && itemVotes.downvoted)) {
-      toast({
-        title: "Already voted",
-        description: `You can only vote once per ${isComment ? 'comment' : 'post'}`,
-      });
-      return;
-    }
-    
-    // Update posts state
-    const updatePosts = prev => prev.map(post => {
-      if (!isComment && post.id === id) {
-        // Voting on post
-        let updatedUpvotes = post.upvotes;
-        let updatedDownvotes = post.downvotes;
-        
-        if (type === 'up') {
-          updatedUpvotes += 1;
-          if (itemVotes.downvoted) {
-            updatedDownvotes = Math.max(0, updatedDownvotes - 1);
-          }
-        } else {
-          updatedDownvotes += 1;
-          if (itemVotes.upvoted) {
-            updatedUpvotes = Math.max(0, updatedUpvotes - 1);
-          }
-        }
-        
-        return { 
-          ...post, 
-          upvotes: updatedUpvotes,
-          downvotes: updatedDownvotes
-        };
-      } else if (isComment && post.id === postId) {
-        // Voting on comment
-        return {
-          ...post,
-          comments: post.comments.map(comment => {
-            if (comment.id === id) {
-              let updatedUpvotes = comment.upvotes;
-              let updatedDownvotes = comment.downvotes;
-              
-              if (type === 'up') {
-                updatedUpvotes += 1;
-                if (itemVotes.downvoted) {
-                  updatedDownvotes = Math.max(0, updatedDownvotes - 1);
-                }
-              } else {
-                updatedDownvotes += 1;
-                if (itemVotes.upvoted) {
-                  updatedUpvotes = Math.max(0, updatedUpvotes - 1);
-                }
-              }
-              
-              return {
-                ...comment,
-                upvotes: updatedUpvotes,
-                downvotes: updatedDownvotes
-              };
-            }
-            return comment;
-          })
-        };
-      }
-      return post;
-    });
-    
-    setPosts(updatePosts);
-    
-    // Update user votes state
-    setUserVotes(prev => ({
-      ...prev,
-      [isComment ? 'comments' : 'posts']: {
-        ...prev[isComment ? 'comments' : 'posts'],
-        [id]: {
-          upvoted: type === 'up' ? true : false,
-          downvoted: type === 'down' ? true : false,
-        }
-      }
-    }));
-  };
-
-  const handleReport = (id: number) => {
+  const handleReport = (id: string) => {
     // Check if this ID belongs to a post or comment
     const isPost = posts.some(post => post.id === id);
     
@@ -177,7 +48,7 @@ const PostFeed = ({ posts, setPosts }: PostFeedProps) => {
       setIsReportingComment(false);
     } else {
       // It's a comment ID, find which post it belongs to
-      let foundPostId = null;
+      let foundPostId: string | null = null;
       for (const post of posts) {
         if (post.comments.some(comment => comment.id === id)) {
           foundPostId = post.id;
@@ -193,105 +64,18 @@ const PostFeed = ({ posts, setPosts }: PostFeedProps) => {
   };
 
   const handleReportSubmit = async (reason: string, customReason?: string) => {
-    if (isReportingComment && reportingCommentId) {
-      // Reporting a comment
-      let reportedComment = null;
-      let parentPost = null;
-      
-      for (const post of posts) {
-        const comment = post.comments.find(c => c.id === reportingCommentId);
-        if (comment) {
-          reportedComment = comment;
-          parentPost = post;
-          break;
-        }
+    try {
+      if (isReportingComment && reportingCommentId) {
+        await onCreateReport('comment', reportingCommentId, reason, customReason);
+      } else if (reportingPostId) {
+        await onCreateReport('confession', reportingPostId, reason, customReason);
       }
-      
-      if (!reportedComment || !parentPost) return;
-
-      const reportData = {
-        id: `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        type: 'comment',
-        targetId: reportingCommentId.toString(),
-        reason,
-        customReason,
-        timestamp: Date.now(),
-        content: reportedComment.content,
-        status: 'pending'
-      };
-
-      const existingReports = JSON.parse(localStorage.getItem('reportedContent') || '[]');
-      existingReports.push(reportData);
-      localStorage.setItem('reportedContent', JSON.stringify(existingReports));
-      
-      toast({
-        title: "Report Submitted 🚨",
-        description: `Comment reported for: ${reason}. Our moderation team will review this shortly.`,
-      });
     } else if (reportingPostId) {
-      // Reporting a post
-      const reportedPost = posts.find(post => post.id === reportingPostId);
-      if (!reportedPost) return;
-
-      const reportData = {
-        id: `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        type: 'post',
-        targetId: reportingPostId.toString(),
-        reason,
-        customReason,
-        timestamp: Date.now(),
-        content: reportedPost.content,
-        status: 'pending'
-      };
-
-      const existingReports = JSON.parse(localStorage.getItem('reportedContent') || '[]');
-      existingReports.push(reportData);
-      localStorage.setItem('reportedContent', JSON.stringify(existingReports));
-      
-      toast({
-        title: "Report Submitted 🚨",
-        description: `Post #${reportingPostId} reported for: ${reason}. Our moderation team will review this shortly.`,
-      });
+        await onCreateReport('confession', reportingPostId, reason, customReason);
     }
 
     setReportModalOpen(false);
     setReportingPostId(null);
-  };
-
-  const toggleComments = (postId: number) => {
-    setPosts(prev => prev.map(post => 
-      post.id === postId 
-        ? { ...post, showComments: !post.showComments }
-        : post
-    ));
-  };
-
-  const addComment = (postId: number, content: string, isAnonymous: boolean = true) => {
-    const newComment: Comment = {
-      id: Date.now(), // Simple ID generation
-      postId,
-      content,
-      timestamp: new Date(),
-      upvotes: 0,
-      downvotes: 0,
-      isAnonymous,
-      username: isAnonymous ? undefined : 'User' // Could be replaced with actual user system
-    };
-
-    setPosts(prev => prev.map(post => 
-      post.id === postId 
-        ? { 
-            ...post, 
-            comments: [...post.comments, newComment],
-            showComments: true // Auto-show comments when adding one
-          }
-        : post
-    ));
-
-    toast({
-      title: "Comment Added! 💬",
-      description: "Your anonymous reply has been posted",
-    });
   };
 
   const formatTimeAgo = (date: Date) => {
@@ -310,7 +94,7 @@ const PostFeed = ({ posts, setPosts }: PostFeedProps) => {
     
     switch (sortBy) {
       case 'newest':
-        return sortedPosts.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+        return sortedPosts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       case 'most-upvoted':
         return sortedPosts.sort((a, b) => b.upvotes - a.upvotes);
       case 'most-controversial':
@@ -474,13 +258,13 @@ const PostFeed = ({ posts, setPosts }: PostFeedProps) => {
         <PostItem 
           key={post.id}
           post={post}
-          onVote={handleVote}
+          onVote={onVote}
           onReport={handleReport}
-          formatTimeAgo={formatTimeAgo}
-          userVotes={userVotes.posts[post.id] || { upvoted: false, downvoted: false }}
+          formatTimeAgo={(dateStr) => formatTimeAgo(new Date(dateStr))}
+          userVotes={userVotes.confessions[post.id] || { upvoted: false, downvoted: false }}
           commentVotes={userVotes.comments}
-          onToggleComments={toggleComments}
-          onAddComment={addComment}
+          onToggleComments={onToggleComments}
+          onAddComment={onAddComment}
         />
       ))}
       
@@ -520,7 +304,7 @@ const PostFeed = ({ posts, setPosts }: PostFeedProps) => {
         isOpen={reportModalOpen}
         onClose={() => setReportModalOpen(false)}
         onSubmit={handleReportSubmit}
-        postId={isReportingComment ? (reportingCommentId || 0) : (reportingPostId || 0)}
+        postId={isReportingComment ? (reportingCommentId || '') : (reportingPostId || '')}
         isComment={isReportingComment}
       />
     </div>

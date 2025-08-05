@@ -1,16 +1,17 @@
 import { useState } from 'react';
-import { Heart, ArrowUp, ArrowDown, MessageCircle, Send, Flag } from 'lucide-react';
-import { Post, Comment } from './PostFeed';
+import { Heart, ArrowUp, ArrowDown, MessageCircle, Send } from 'lucide-react';
+import { ConfessionWithComments } from '@/hooks/useConfessions';
+import { Comment } from '@/lib/supabase';
 
 interface PostItemProps {
-  post: Post;
-  onVote: (id: number, type: 'up' | 'down', isComment?: boolean, postId?: number) => void;
-  onReport: (id: number) => void;
-  formatTimeAgo: (date: Date) => string;
+  post: ConfessionWithComments;
+  onVote: (id: string, type: 'up' | 'down', isComment?: boolean) => Promise<boolean>;
+  onReport: (id: string) => void;
+  formatTimeAgo: (date: string) => string;
   userVotes: { upvoted: boolean; downvoted: boolean };
-  commentVotes: { [commentId: number]: { upvoted: boolean; downvoted: boolean } };
-  onToggleComments: (postId: number) => void;
-  onAddComment: (postId: number, content: string, isAnonymous?: boolean) => void;
+  commentVotes: { [commentId: string]: { upvoted: boolean; downvoted: boolean } };
+  onToggleComments: (postId: string) => void;
+  onAddComment: (postId: string, content: string, isAnonymous?: boolean) => Promise<void>;
 }
 
 const PostItem = ({ 
@@ -25,13 +26,26 @@ const PostItem = ({
 }: PostItemProps) => {
   const [newComment, setNewComment] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(true);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
-  const handleSubmitComment = () => {
+  const handleSubmitComment = async () => {
     if (newComment.trim()) {
-      onAddComment(post.id, newComment.trim(), isAnonymous);
-      setNewComment('');
+      setIsSubmittingComment(true);
+      try {
+        await onAddComment(post.id, newComment.trim(), isAnonymous);
+        setNewComment('');
+      } catch (error) {
+        console.error('Error submitting comment:', error);
+      } finally {
+        setIsSubmittingComment(false);
+      }
     }
   };
+
+  const handleVote = async (id: string, type: 'up' | 'down', isComment: boolean = false) => {
+    await onVote(id, type, isComment);
+  };
+
   return (
     <div key={post.id} className="retro-card relative">
       {post.isNew && (
@@ -42,11 +56,11 @@ const PostItem = ({
       
       <div className="flex justify-between items-start mb-3">
         <span className="font-cyber text-sm text-retro-electric-blue">
-          Anonymous Ghost #{post.id}
+          Anonymous Ghost #{post.id.slice(-8)}
         </span>
         <div className="flex items-center space-x-2">
           <span className="font-cyber text-xs text-retro-hot-pink">
-            {formatTimeAgo(post.timestamp)}
+            {formatTimeAgo(post.created_at)}
           </span>
           <button
             onClick={() => onReport(post.id)}
@@ -77,23 +91,23 @@ const PostItem = ({
         </div>
       )}
       
-      {post.imageUrl && (
+      {post.image_url && (
         <div className="mb-4 border-2 border-retro-hot-pink p-2">
-          <img src={post.imageUrl} alt="Confession" className="max-w-full h-auto" />
+          <img src={post.image_url} alt="Confession" className="max-w-full h-auto" />
         </div>
       )}
       
-      {post.videoUrl && (
+      {post.video_url && (
         <div className="mb-4 border-2 border-retro-electric-blue p-2">
-          <video controls src={post.videoUrl} className="w-full">
+          <video controls src={post.video_url} className="w-full">
             Your browser does not support video playback
           </video>
         </div>
       )}
       
-      {post.audioUrl && (
+      {post.audio_url && (
         <div className="mb-4">
-          <audio controls src={post.audioUrl} className="w-full">
+          <audio controls src={post.audio_url} className="w-full">
             Your browser does not support audio playback
           </audio>
         </div>
@@ -102,7 +116,7 @@ const PostItem = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <button
-            onClick={() => onVote(post.id, 'up')}
+            onClick={() => handleVote(post.id, 'up')}
             className={`flex items-center space-x-1 transition-colors group ${
               userVotes.upvoted 
                 ? 'text-retro-cyber-yellow' 
@@ -115,7 +129,7 @@ const PostItem = ({
           </button>
           
           <button
-            onClick={() => onVote(post.id, 'down')}
+            onClick={() => handleVote(post.id, 'down')}
             className={`flex items-center space-x-1 transition-colors group ${
               userVotes.downvoted 
                 ? 'text-retro-cyber-yellow' 
@@ -171,11 +185,11 @@ const PostItem = ({
               />
               <button
                 onClick={handleSubmitComment}
-                disabled={!newComment.trim()}
+                disabled={!newComment.trim() || isSubmittingComment}
                 className="px-3 py-2 bg-retro-cyber-yellow text-black font-pixel text-xs hover:bg-retro-neon-green disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Submit comment"
               >
-                <Send className="w-4 h-4" />
+                {isSubmittingComment ? '...' : <Send className="w-4 h-4" />}
               </button>
             </div>
             <div className="text-xs text-retro-hot-pink/70 mt-1">
@@ -191,10 +205,10 @@ const PostItem = ({
                 <div key={comment.id} className="bg-gray-900/30 border border-retro-electric-blue/20 rounded p-3">
                   <div className="flex justify-between items-start mb-2">
                     <span className="font-cyber text-xs text-retro-electric-blue/80">
-                      {comment.isAnonymous ? `Anonymous Reply #${comment.id}` : comment.username}
+                      {comment.is_anonymous ? `Anonymous Reply #${comment.id.slice(-8)}` : comment.username}
                     </span>
                     <span className="font-cyber text-xs text-retro-hot-pink/70">
-                      {formatTimeAgo(comment.timestamp)}
+                      {formatTimeAgo(comment.created_at)}
                     </span>
                   </div>
                   
@@ -204,7 +218,7 @@ const PostItem = ({
                   
                   <div className="flex items-center space-x-3">
                     <button
-                      onClick={() => onVote(comment.id, 'up', true, post.id)}
+                      onClick={() => handleVote(comment.id, 'up', true)}
                       className={`flex items-center space-x-1 transition-colors ${
                         commentUserVotes.upvoted 
                           ? 'text-retro-cyber-yellow' 
@@ -217,7 +231,7 @@ const PostItem = ({
                     </button>
                     
                     <button
-                      onClick={() => onVote(comment.id, 'down', true, post.id)}
+                      onClick={() => handleVote(comment.id, 'down', true)}
                       className={`flex items-center space-x-1 transition-colors ${
                         commentUserVotes.downvoted 
                           ? 'text-retro-cyber-yellow' 
@@ -234,8 +248,7 @@ const PostItem = ({
                       className="flex items-center space-x-1 text-gray-400 hover:text-retro-cyber-yellow transition-colors"
                       title="Report comment"
                     >
-                      <Flag className="w-3 h-3" />
-                      <span className="font-cyber text-xs">Report</span>
+                      <span className="font-cyber text-xs">report</span>
                     </button>
                   </div>
                 </div>

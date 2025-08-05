@@ -5,7 +5,7 @@ interface ReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (reason: string, customReason?: string) => void;
-  postId: number;
+  postId: string;
   isComment?: boolean;
 }
 
@@ -100,7 +100,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, onSubmit, po
           <div className="flex items-center gap-2">
             <Flag className="w-5 h-5 text-retro-hot-pink" />
             <h2 className="font-pixel text-lg text-retro-cyber-yellow">
-              Report {isComment ? 'Comment' : 'Confession'} #{postId}
+              Report {isComment ? 'Comment' : 'Confession'} #{postId.slice(-8)}
             </h2>
           </div>
           <button 
