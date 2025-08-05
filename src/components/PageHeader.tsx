@@ -3,7 +3,7 @@ import React from 'react';
 
 const PageHeader = () => {
   return (
-    <header className="text-center mb-12">
+    <header className="text-center mb-12 relative">
       <h1 
         className="glitch-text font-pixel text-4xl md:text-6xl text-retro-neon-green mb-4 animate-glow"
         data-text="UniGist"

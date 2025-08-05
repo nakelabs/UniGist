@@ -105,13 +105,13 @@
   }
 
   .glitch-text::before {
-    animation: glitch-1 0.3s infinite;
+    animation: glitch-1 2s infinite;
     color: theme('colors.retro.hot-pink');
     z-index: -1;
   }
 
   .glitch-text::after {
-    animation: glitch-2 0.3s infinite;
+    animation: glitch-2 2s infinite;
     color: theme('colors.retro.electric-blue');
     z-index: -2;
   }
@@ -121,7 +121,7 @@
       transform: translate(0, 0);
     }
     15%, 49% {
-      transform: translate(-2px, 0);
+      transform: translate(-1px, 0);
     }
   }
 
@@ -130,7 +130,50 @@
       transform: translate(0, 0);
     }
     21%, 62% {
-      transform: translate(2px, 0);
+      transform: translate(1px, 0);
     }
+  }
+
+  .retro-checkbox {
+    @apply appearance-none w-4 h-4 border-2 border-retro-neon-green bg-black relative cursor-pointer;
+  }
+
+  .retro-checkbox:checked {
+    @apply bg-retro-cyber-yellow border-retro-cyber-yellow;
+  }
+
+  .retro-checkbox:checked::after {
+    content: '✓';
+    @apply absolute top-0 left-0 w-full h-full flex items-center justify-center text-black text-xs font-bold;
+  }
+
+  .retro-radio {
+    @apply appearance-none w-4 h-4 border-2 border-retro-neon-green bg-black rounded-full relative cursor-pointer;
+  }
+
+  .retro-radio:checked {
+    @apply bg-retro-cyber-yellow border-retro-cyber-yellow;
+  }
+
+  .retro-radio:checked::after {
+    content: '';
+    @apply absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-black rounded-full;
+  }
+
+  @keyframes glow {
+    0%, 100% {
+      text-shadow: 0 0 5px theme('colors.retro.neon-green'),
+                   0 0 10px theme('colors.retro.neon-green'),
+                   0 0 15px theme('colors.retro.neon-green');
+    }
+    50% {
+      text-shadow: 0 0 10px theme('colors.retro.neon-green'),
+                   0 0 20px theme('colors.retro.neon-green'),
+                   0 0 30px theme('colors.retro.neon-green');
+    }
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
   }
 }

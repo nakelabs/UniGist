@@ -1,6 +1,6 @@
 
 import { useState, useRef } from 'react';
-import { Mic, Upload, Image, Video } from 'lucide-react';
+import { Mic, Upload, Image, Video, Tag, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import AudioRecorder from './AudioRecorder';
 import VideoRecorder from './VideoRecorder';
@@ -12,11 +12,14 @@ interface ConfessionFormProps {
     audioUrl?: string;
     videoUrl?: string;
     imageUrl?: string;
+    tags?: string[];
   }) => void;
 }
 
 const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
   const [newConfession, setNewConfession] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [currentTag, setCurrentTag] = useState('');
   const { toast } = useToast();
   
   // Audio recording states
@@ -30,6 +33,30 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
   // Image upload state
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
+  const addTag = () => {
+    const trimmedTag = currentTag.trim().toLowerCase();
+    if (trimmedTag && !tags.includes(trimmedTag) && tags.length < 5) {
+      setTags([...tags, trimmedTag]);
+      setCurrentTag('');
+    } else if (tags.length >= 5) {
+      toast({
+        title: "Tag Limit Reached! 🏷️",
+        description: "You can only add up to 5 tags per confession.",
+      });
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleTagKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addTag();
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newConfession.trim() && !audioUrl && !videoUrl && !imageUrl) return;
@@ -38,10 +65,13 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
       content: newConfession,
       audioUrl: audioUrl || undefined,
       videoUrl: videoUrl || undefined,
-      imageUrl: imageUrl || undefined
+      imageUrl: imageUrl || undefined,
+      tags: tags
     });
 
     setNewConfession('');
+    setTags([]);
+    setCurrentTag('');
     setAudioUrl(null);
     setAudioBlob(null);
     setVideoUrl(null);
@@ -103,6 +133,62 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
           className="retro-input w-full h-32 resize-none"
           maxLength={500}
         />
+
+        {/* Tags Input */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Tag className="w-4 h-4 text-retro-cyber-yellow" />
+            <label className="font-cyber text-sm text-retro-pastel-blue">
+              Add tags (optional, max 5):
+            </label>
+          </div>
+          
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={currentTag}
+              onChange={(e) => setCurrentTag(e.target.value)}
+              onKeyPress={handleTagKeyPress}
+              placeholder="Type a tag and press Enter..."
+              className="flex-1 bg-gray-900/50 border border-retro-electric-blue/30 rounded p-2 text-retro-pastel-blue font-cyber text-sm focus:outline-none focus:border-retro-cyber-yellow"
+              maxLength={20}
+            />
+            <button
+              type="button"
+              onClick={addTag}
+              disabled={!currentTag.trim() || tags.length >= 5}
+              className="px-3 py-2 bg-retro-cyber-yellow text-black font-pixel text-xs hover:bg-retro-neon-green disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Add
+            </button>
+          </div>
+
+          {/* Display current tags */}
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="flex items-center gap-1 px-2 py-1 bg-retro-electric-blue/20 border border-retro-electric-blue/40 text-retro-electric-blue font-pixel text-xs"
+                >
+                  #{tag}
+                  <button
+                    type="button"
+                    onClick={() => removeTag(tag)}
+                    className="text-retro-hot-pink hover:text-retro-cyber-yellow ml-1"
+                    title="Remove tag"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="text-xs text-retro-electric-blue/70">
+            Suggested tags: #university #relationships #work #family #secrets #funny #embarrassing
+          </div>
+        </div>
         
         {/* Media Recording and Upload Section */}
         <div className="space-y-4">

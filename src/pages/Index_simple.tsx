@@ -27,6 +27,7 @@ const Index = () => {
       videoUrl: confession.videoUrl,
       imageUrl: confession.imageUrl,
       tags: confession.tags || [],
+      reports: [],
       comments: [],
       showComments: false,
       isNew: true
@@ -59,7 +60,6 @@ const Index = () => {
         
         <PostFeed 
           posts={posts} 
-          setPosts={setPosts}
         />
         
         <PageFooter />
