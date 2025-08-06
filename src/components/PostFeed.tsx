@@ -40,7 +40,7 @@ const PostFeed = ({
 
   const handleReport = (id: string) => {
     // Check if this ID belongs to a post or comment
-    const isPost = posts.some(post => post.id === id);
+    const isPost = posts.some(post => post.id.toString() === id);
     
     if (isPost) {
       setReportingPostId(id);
@@ -50,8 +50,8 @@ const PostFeed = ({
       // It's a comment ID, find which post it belongs to
       let foundPostId: string | null = null;
       for (const post of posts) {
-        if (post.comments.some(comment => comment.id === id)) {
-          foundPostId = post.id;
+        if (post.comments.some(comment => comment.id.toString() === id)) {
+          foundPostId = post.id.toString();
           break;
         }
       }
@@ -70,12 +70,14 @@ const PostFeed = ({
       } else if (reportingPostId) {
         await onCreateReport('confession', reportingPostId, reason, customReason);
       }
-    } else if (reportingPostId) {
-        await onCreateReport('confession', reportingPostId, reason, customReason);
+      
+      setReportModalOpen(false);
+      setReportingPostId(null);
+      setReportingCommentId(null);
+      setIsReportingComment(false);
+    } catch (error) {
+      console.error('Error submitting report:', error);
     }
-
-    setReportModalOpen(false);
-    setReportingPostId(null);
   };
 
   const formatTimeAgo = (date: Date) => {
@@ -116,13 +118,13 @@ const PostFeed = ({
     if (searchTerm.trim()) {
       filtered = filtered.filter(post =>
         post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+        (post.tags && post.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
       );
     }
 
     // Filter by selected tag
     if (selectedTag) {
-      filtered = filtered.filter(post => post.tags.includes(selectedTag));
+      filtered = filtered.filter(post => post.tags && post.tags.includes(selectedTag));
     }
 
     return filtered;
@@ -130,7 +132,7 @@ const PostFeed = ({
 
   // Get all unique tags from all posts
   const getAllTags = () => {
-    const allTags = posts.flatMap(post => post.tags);
+    const allTags = posts.flatMap(post => post.tags || []);
     return [...new Set(allTags)].sort();
   };
 
@@ -149,7 +151,7 @@ const PostFeed = ({
             placeholder="Search confessions or tags..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-900/50 border border-retro-electric-blue/30 rounded text-retro-pastel-blue font-cyber text-sm focus:outline-none focus:border-retro-cyber-yellow"
+            className="w-full pl-10 pr-4 py-2 bg-gray-900/50 border border-retro-electric-blue/30 rounded text-retro-neon-green font-cyber text-sm focus:outline-none focus:border-retro-cyber-yellow"
           />
           {searchTerm && (
             <button
@@ -166,7 +168,7 @@ const PostFeed = ({
         {getAllTags().length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
             <Tag className="w-4 h-4 text-retro-cyber-yellow" />
-            <span className="font-cyber text-sm text-retro-pastel-blue">Tags:</span>
+            <span className="font-cyber text-sm text-retro-neon-green">Tags:</span>
             <button
               onClick={() => setSelectedTag('')}
               className={`px-2 py-1 font-pixel text-xs border transition-all ${
@@ -197,7 +199,7 @@ const PostFeed = ({
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-retro-cyber-yellow" />
-            <span className="font-cyber text-sm text-retro-pastel-blue">Sort by:</span>
+            <span className="font-cyber text-sm text-retro-neon-green">Sort by:</span>
             <div className="flex gap-1">
               <button
                 onClick={() => setSortBy('newest')}
@@ -261,7 +263,7 @@ const PostFeed = ({
           onVote={onVote}
           onReport={handleReport}
           formatTimeAgo={(dateStr) => formatTimeAgo(new Date(dateStr))}
-          userVotes={userVotes.confessions[post.id] || { upvoted: false, downvoted: false }}
+          userVotes={userVotes.confessions[post.id.toString()] || { upvoted: false, downvoted: false }}
           commentVotes={userVotes.comments}
           onToggleComments={onToggleComments}
           onAddComment={onAddComment}
@@ -273,7 +275,7 @@ const PostFeed = ({
           <div className="text-retro-electric-blue font-cyber text-lg mb-2">
             No confessions found 🔍
           </div>
-          <div className="text-retro-pastel-blue font-cyber text-sm mb-4">
+          <div className="text-retro-neon-green font-cyber text-sm mb-4">
             {searchTerm && `No results for "${searchTerm}"`}
             {selectedTag && `No posts tagged with "#${selectedTag}"`}
           </div>
@@ -294,7 +296,7 @@ const PostFeed = ({
           <div className="text-retro-electric-blue font-cyber text-lg mb-2">
             No confessions yet... 👻
           </div>
-          <div className="text-retro-pastel-blue font-cyber text-sm">
+          <div className="text-retro-neon-green font-cyber text-sm">
             Be the first to share your secret!
           </div>
         </div>

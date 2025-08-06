@@ -9,6 +9,7 @@ export const useReports = () => {
 
   const fetchReports = async () => {
     try {
+      console.log('Fetching reports from database...');
       setLoading(true);
       const { data, error } = await supabase
         .from('reports')
@@ -16,6 +17,7 @@ export const useReports = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      console.log('Fetched reports:', data);
       setReports(data || []);
     } catch (error) {
       console.error('Error fetching reports:', error);
@@ -70,6 +72,8 @@ export const useReports = () => {
 
   const updateReportStatus = async (reportId: string, status: 'resolved' | 'dismissed') => {
     try {
+      console.log(`Updating report ${reportId} to status: ${status}`);
+      
       const { error } = await supabase
         .from('reports')
         .update({ status })
@@ -77,9 +81,13 @@ export const useReports = () => {
 
       if (error) throw error;
 
+      console.log(`Successfully updated report ${reportId} in database`);
+
       setReports(prev => prev.map(report => 
         report.id === reportId ? { ...report, status } : report
       ));
+
+      console.log(`Updated local state for report ${reportId}`);
 
       toast({
         title: "Report Updated",
@@ -100,15 +108,26 @@ export const useReports = () => {
     try {
       const tableName = report.target_type === 'confession' ? 'confessions' : 'comments';
       
-      const { error } = await supabase
+      // Delete the content first
+      const { error: deleteError } = await supabase
         .from(tableName)
         .delete()
         .eq('id', report.target_id);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
 
-      // Mark report as resolved
-      await updateReportStatus(report.id, 'resolved');
+      // Update report status to resolved
+      const { error: updateError } = await supabase
+        .from('reports')
+        .update({ status: 'resolved' })
+        .eq('id', report.id);
+
+      if (updateError) throw updateError;
+
+      // Update local state immediately
+      setReports(prev => prev.map(r => 
+        r.id === report.id ? { ...r, status: 'resolved' as const } : r
+      ));
 
       toast({
         title: "Content Deleted",
@@ -133,8 +152,12 @@ export const useReports = () => {
       .channel('reports_changes')
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'reports' },
-        () => {
-          fetchReports();
+        (payload) => {
+          console.log('Reports table change detected:', payload);
+          // Add a small delay to ensure database consistency
+          setTimeout(() => {
+            fetchReports();
+          }, 500);
         }
       )
       .subscribe();

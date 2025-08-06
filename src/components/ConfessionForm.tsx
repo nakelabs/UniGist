@@ -1,9 +1,9 @@
-
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { Tag, X } from 'lucide-react';
 import AudioRecorder from './AudioRecorder';
 import VideoRecorder from './VideoRecorder';
 import ImageUploader from './ImageUploader';
+import { uploadFile } from '@/lib/fileUpload';
 
 interface ConfessionFormProps {
   onSubmit: (confession: {
@@ -20,6 +20,7 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
   const [tags, setTags] = useState<string[]>([]);
   const [currentTag, setCurrentTag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   
   // Audio recording states
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -81,39 +82,44 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && file.type.startsWith('audio/')) {
-      const url = URL.createObjectURL(file);
-      setAudioUrl(url);
-      setAudioBlob(file);
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      if (file.type.startsWith('audio/')) {
+        console.log("Uploading audio file...");
+        const permanentUrl = await uploadFile(file, 'audio_confession');
+        setAudioUrl(permanentUrl);
+        setAudioBlob(file);
+        console.log("Audio Uploaded! 🎧 - Your audio confession has been saved.");
+      } else if (file.type.startsWith('video/')) {
+        console.log("Uploading video file...");
+        const permanentUrl = await uploadFile(file, 'video_confession');
+        setVideoUrl(permanentUrl);
+        setVideoBlob(file);
+        console.log("Video Uploaded! 🎬 - Your video confession has been saved.");
+      } else if (file.type.startsWith('image/')) {
+        console.log("Uploading image file...");
+        const permanentUrl = await uploadFile(file, 'image_confession');
+        setImageUrl(permanentUrl);
+        console.log("Image Uploaded! 🖼️ - Your image confession has been saved.");
+      } else {
+        console.log("Invalid File! ⚠️ - Please upload an audio, video, or image file.");
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
       
-      toast({
-        title: "Audio Uploaded! 🎧",
-        description: "Preview your audio confession before posting.",
-      });
-    } else if (file && file.type.startsWith('video/')) {
-      const url = URL.createObjectURL(file);
-      setVideoUrl(url);
-      setVideoBlob(file);
+      // Show user-friendly error message
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.log(`Upload Failed! ❌ - ${errorMessage}. File upload is currently unavailable.`);
       
-      toast({
-        title: "Video Uploaded! 🎬",
-        description: "Preview your video confession before posting.",
-      });
-    } else if (file && file.type.startsWith('image/')) {
-      const url = URL.createObjectURL(file);
-      setImageUrl(url);
-      
-      toast({
-        title: "Image Uploaded! 🖼️",
-        description: "Preview your image confession before posting.",
-      });
-    } else if (file) {
-      toast({
-        title: "Invalid File! ⚠️",
-        description: "Please upload an audio, video, or image file.",
-      });
+      // Don't create blob URLs as they won't persist after refresh
+      // Instead, show an error and let user know file upload is temporarily unavailable
+      alert(`File upload failed: ${errorMessage}\n\nPlease try uploading your file again later. You can still post text confessions.`);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -135,7 +141,7 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Tag className="w-4 h-4 text-retro-cyber-yellow" />
-            <label className="font-cyber text-sm text-retro-pastel-blue">
+            <label className="font-cyber text-sm text-retro-neon-green">
               Add tags (optional, max 5):
             </label>
           </div>
@@ -147,7 +153,7 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
               onChange={(e) => setCurrentTag(e.target.value)}
               onKeyPress={handleTagKeyPress}
               placeholder="Type a tag and press Enter..."
-              className="flex-1 bg-gray-900/50 border border-retro-electric-blue/30 rounded p-2 text-retro-pastel-blue font-cyber text-sm focus:outline-none focus:border-retro-cyber-yellow"
+              className="flex-1 bg-gray-900/50 border border-retro-electric-blue/30 rounded p-2 text-retro-neon-green font-cyber text-sm focus:outline-none focus:border-retro-cyber-yellow"
               maxLength={20}
             />
             <button
@@ -195,6 +201,7 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
             setAudioUrl={setAudioUrl}
             setAudioBlob={setAudioBlob}
             handleFileUpload={handleFileUpload}
+            isUploading={isUploading}
           />
 
           {/* Video controls */}
@@ -220,9 +227,9 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
           <button
             type="submit"
             className="retro-button"
-            disabled={(!newConfession.trim() && !audioUrl && !videoUrl && !imageUrl) || isSubmitting}
+            disabled={(!newConfession.trim() && !audioUrl && !videoUrl && !imageUrl) || isSubmitting || isUploading}
           >
-            {isSubmitting ? 'POSTING...' : 'CONFESS NOW! 🚀'}
+            {isUploading ? 'UPLOADING...' : isSubmitting ? 'POSTING...' : 'CONFESS NOW! 🚀'}
           </button>
         </div>
       </form>

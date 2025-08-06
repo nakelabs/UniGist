@@ -15,10 +15,27 @@ interface AdminStats {
   pendingReports: number;
 }
 
+interface ReportWithContent {
+  id: string;
+  target_type: 'confession' | 'comment';
+  target_id: string;
+  reason: string;
+  custom_reason?: string;
+  status: 'pending' | 'resolved' | 'dismissed';
+  created_at: string;
+  updated_at: string;
+  reported_content?: {
+    content: string;
+    type: 'confession' | 'comment';
+    confession_id?: string;
+  };
+}
+
 export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
-  const { reports, updateReportStatus, deleteContent } = useReports();
+  const { reports, updateReportStatus, deleteContent, refetch: refetchReports } = useReports();
+  const [reportsWithContent, setReportsWithContent] = useState<ReportWithContent[]>([]);
   const [stats, setStats] = useState<AdminStats>({
     totalPosts: 0,
     totalComments: 0,
@@ -37,13 +54,23 @@ export default function Admin() {
       // Check if session is still valid (30 minutes)
       if (now - sessionData.loginTime < 30 * 60 * 1000) {
         setIsAuthenticated(true);
-        loadAdminData();
+        // loadAdminData will be called when reports load
       } else {
         // Session expired
         localStorage.removeItem('adminSession');
       }
     }
   }, []);
+
+  // Load reports with content whenever reports change
+  useEffect(() => {
+    console.log('Reports updated:', reports);
+    if (reports.length > 0) {
+      loadReportsWithContent(reports);
+    } else {
+      setReportsWithContent([]);
+    }
+  }, [reports]);
 
   // Listen for localStorage changes to update stats in real-time
   useEffect(() => {
@@ -90,56 +117,115 @@ export default function Admin() {
   const handleLogout = () => {
     localStorage.removeItem('adminSession');
     setIsAuthenticated(false);
-    setReports([]);
   };
 
-  const loadAdminData = () => {
-    const fetchStats = async () => {
-      try {
-        // Get confession count
-        const { count: confessionCount } = await supabase
-          .from('confessions')
-          .select('*', { count: 'exact', head: true });
+  const loadAdminData = async () => {
+    console.log('Loading admin data...');
+    try {
+      // Get confession count
+      const { count: confessionCount } = await supabase
+        .from('confessions')
+        .select('*', { count: 'exact', head: true });
 
-        // Get comment count
-        const { count: commentCount } = await supabase
-          .from('comments')
-          .select('*', { count: 'exact', head: true });
+      // Get comment count
+      const { count: commentCount } = await supabase
+        .from('comments')
+        .select('*', { count: 'exact', head: true });
 
-        // Get report counts
-        const { count: totalReportCount } = await supabase
-          .from('reports')
-          .select('*', { count: 'exact', head: true });
+      // Get report counts
+      const { count: totalReportCount } = await supabase
+        .from('reports')
+        .select('*', { count: 'exact', head: true });
 
-        const { count: pendingReportCount } = await supabase
-          .from('reports')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending');
+      const { count: pendingReportCount } = await supabase
+        .from('reports')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
 
-        setStats({
-          totalPosts: confessionCount || 0,
-          totalComments: commentCount || 0,
-          totalReports: totalReportCount || 0,
-          pendingReports: pendingReportCount || 0
+      console.log('Admin stats loaded:', {
+        confessionCount,
+        commentCount,
+        totalReportCount,
+        pendingReportCount
+      });
+
+      setStats({
+        totalPosts: confessionCount || 0,
+        totalComments: commentCount || 0,
+        totalReports: totalReportCount || 0,
+        pendingReports: pendingReportCount || 0
+      });
+    } catch (error) {
+      console.error('Error fetching admin stats:', error);
+    }
+  };
+
+  const loadReportsWithContent = async (reportsList: any[]) => {
+    try {
+      const reportsWithContent: ReportWithContent[] = [];
+      
+      for (const report of reportsList) {
+        let content = null;
+        
+        if (report.target_type === 'confession') {
+          const { data } = await supabase
+            .from('confessions')
+            .select('content')
+            .eq('id', report.target_id)
+            .single();
+          
+          if (data) {
+            content = {
+              content: data.content,
+              type: 'confession' as const
+            };
+          }
+        } else if (report.target_type === 'comment') {
+          const { data } = await supabase
+            .from('comments')
+            .select('content, confession_id')
+            .eq('id', report.target_id)
+            .single();
+          
+          if (data) {
+            content = {
+              content: data.content,
+              type: 'comment' as const,
+              confession_id: data.confession_id
+            };
+          }
+        }
+        
+        reportsWithContent.push({
+          ...report,
+          reported_content: content
         });
-      } catch (error) {
-        console.error('Error fetching admin stats:', error);
       }
-    };
-
-    fetchStats();
+      
+      setReportsWithContent(reportsWithContent);
+    } catch (error) {
+      console.error('Error loading reports with content:', error);
+    }
   };
 
-  const handleReportAction = async (reportId: string, action: 'resolve' | 'dismiss') => {
-    await updateReportStatus(reportId, action);
-    loadAdminData();
+  const handleReportAction = async (reportId: string, action: 'resolved' | 'dismissed') => {
+    try {
+      await updateReportStatus(reportId, action);
+      // Don't manually refresh - let real-time subscription handle it
+    } catch (error) {
+      console.error('Error updating report status:', error);
+    }
   };
 
-  const handleDeleteContent = async (report: any) => {
+  const handleDeleteContent = async (report: ReportWithContent) => {
     setIsDeleting(report.id);
     try {
       await deleteContent(report);
-      loadAdminData();
+      
+      // Force refresh the main feed by dispatching a custom event
+      window.dispatchEvent(new CustomEvent('forceRefreshFeed'));
+      
+      console.log('Content deleted, forced feed refresh triggered');
     } catch (error) {
       console.error('Error deleting content:', error);
     } finally {
@@ -196,7 +282,10 @@ export default function Admin() {
           <h1 className="text-3xl font-mono glow-text">ADMIN DASHBOARD</h1>
           <div className="flex gap-2">
             <Button
-              onClick={loadAdminData}
+              onClick={async () => {
+                await loadAdminData();
+                await refetchReports();
+              }}
               variant="outline"
               className="border-green-500 text-green-400 hover:bg-green-900 font-mono"
             >
@@ -266,23 +355,46 @@ export default function Admin() {
           </TabsList>
 
           <TabsContent value="reports" className="space-y-4">
-            {reports.length === 0 ? (
+            <div className="mb-4">
+              <p className="text-green-400 font-mono text-sm">
+                Debug Info: {reports.length} raw reports, {reportsWithContent.length} reports with content
+              </p>
+            </div>
+            
+            {/* Show raw reports first for debugging */}
+            {reports.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-green-400 font-mono text-sm mb-2">RAW REPORTS (DEBUG):</h3>
+                {reports.map((report) => (
+                  <div key={`raw-${report.id}`} className="bg-green-900/10 border border-green-600 p-2 mb-2 rounded">
+                    <p className="text-green-300 font-mono text-xs">
+                      ID: {report.id} | Type: {report.target_type} | Status: {report.status}
+                    </p>
+                    <p className="text-green-300 font-mono text-xs">
+                      Reason: {report.reason}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {reportsWithContent.length === 0 && reports.length === 0 ? (
               <Card className="bg-black border-green-400">
                 <CardContent className="text-center py-8">
                   <p className="text-green-300 font-mono">NO REPORTS FOUND</p>
                 </CardContent>
               </Card>
             ) : (
-              reports.map((report) => (
+              reportsWithContent.map((report) => (
                 <Card key={report.id} className="bg-black border-green-400">
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
                         <CardTitle className="text-green-400 font-mono text-sm">
-                          {report.type.toUpperCase()} REPORT
+                          {report.target_type?.toUpperCase() || 'CONTENT'} REPORT
                         </CardTitle>
                         <CardDescription className="text-green-600 font-mono text-xs">
-                          {new Date(report.timestamp).toLocaleString()}
+                          {new Date(report.created_at).toLocaleString()}
                         </CardDescription>
                       </div>
                       <Badge
@@ -305,10 +417,30 @@ export default function Admin() {
                       )}
                     </div>
                     
+                    {/* Display reported content */}
+                    {report.reported_content ? (
+                      <div className="border border-red-400 p-3 rounded bg-red-900/10">
+                        <p className="text-xs text-red-400 font-mono mb-2">REPORTED CONTENT:</p>
+                        <p className="text-red-300 font-mono text-sm break-words">
+                          "{report.reported_content.content}"
+                        </p>
+                        <p className="text-xs text-red-500 font-mono mt-2">
+                          Type: {report.reported_content.type.toUpperCase()}
+                          {report.reported_content.confession_id && ` • Parent ID: ${report.reported_content.confession_id}`}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="border border-yellow-400 p-3 rounded bg-yellow-900/10">
+                        <p className="text-yellow-300 font-mono text-sm">
+                          CONTENT NOT FOUND (may have been deleted)
+                        </p>
+                      </div>
+                    )}
+                    
                     {report.status === 'pending' && (
                       <div className="flex gap-2">
                         <Button
-                          onClick={() => handleReportAction(report.id, 'dismiss')}
+                          onClick={() => handleReportAction(report.id, 'dismissed')}
                           variant="outline"
                           size="sm"
                           className="border-yellow-500 text-yellow-400 hover:bg-yellow-900 font-mono"
@@ -316,42 +448,47 @@ export default function Admin() {
                           DISMISS
                         </Button>
                         <Button
-                          onClick={() => handleReportAction(report.id, 'resolve')}
+                          onClick={() => handleReportAction(report.id, 'resolved')}
                           variant="outline"
                           size="sm"
                           className="border-green-500 text-green-400 hover:bg-green-900 font-mono"
                         >
                           RESOLVE
                         </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              onClick={() => handleDeleteContent(report)}
-                              size="sm"
-                              className="border-red-500 text-red-400 hover:bg-red-900 font-mono"
-                            >
-                              DELETE CONTENT
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="bg-black border-red-400">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle className="text-red-400 font-mono">DELETE CONTENT</AlertDialogTitle>
-                              <AlertDialogDescription className="text-red-300 font-mono">
-                                This will permanently delete the reported {report.type}. This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel className="font-mono">CANCEL</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => deleteContent(report)}
+                        {report.reported_content && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="border-red-500 text-red-400 hover:bg-red-900 font-mono"
                                 disabled={isDeleting === report.id}
-                                className="bg-red-900 hover:bg-red-800 font-mono disabled:opacity-50"
                               >
-                                {isDeleting === report.id ? 'DELETING...' : 'DELETE'}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                                {isDeleting === report.id ? 'DELETING...' : 'DELETE CONTENT'}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="bg-black border-red-400">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="text-red-400 font-mono">DELETE CONTENT</AlertDialogTitle>
+                                <AlertDialogDescription className="text-red-300 font-mono">
+                                  This will permanently delete the reported {report.target_type || 'content'}. This action cannot be undone.
+                                  <br /><br />
+                                  Content: "{report.reported_content?.content.substring(0, 100)}..."
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="font-mono">CANCEL</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteContent(report)}
+                                  disabled={isDeleting === report.id}
+                                  className="bg-red-900 hover:bg-red-800 font-mono disabled:opacity-50"
+                                >
+                                  {isDeleting === report.id ? 'DELETING...' : 'DELETE'}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
                       </div>
                     )}
                   </CardContent>

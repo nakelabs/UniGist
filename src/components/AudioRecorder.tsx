@@ -2,16 +2,19 @@
 import { useState, useRef } from 'react';
 import { Mic, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { uploadFile } from '@/lib/fileUpload';
 
 interface AudioRecorderProps {
   audioUrl: string | null;
   setAudioUrl: (url: string | null) => void;
   setAudioBlob: (blob: Blob | null) => void;
   handleFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  isUploading?: boolean;
 }
 
-const AudioRecorder = ({ audioUrl, setAudioUrl, setAudioBlob, handleFileUpload }: AudioRecorderProps) => {
+const AudioRecorder = ({ audioUrl, setAudioUrl, setAudioBlob, handleFileUpload, isUploading = false }: AudioRecorderProps) => {
   const [isRecording, setIsRecording] = useState(false);
+  const [isUploadingRecording, setIsUploadingRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
   const { toast } = useToast();
@@ -28,11 +31,32 @@ const AudioRecorder = ({ audioUrl, setAudioUrl, setAudioBlob, handleFileUpload }
         }
       };
 
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-        const url = URL.createObjectURL(audioBlob);
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         setAudioBlob(audioBlob);
-        setAudioUrl(url);
+        
+        // Upload the recorded audio to Supabase Storage
+        setIsUploadingRecording(true);
+        try {
+          console.log("Uploading recorded audio...");
+          const permanentUrl = await uploadFile(audioBlob, 'recorded_audio');
+          setAudioUrl(permanentUrl);
+          
+          toast({
+            title: "Recording Saved! 🎤✅",
+            description: "Your audio confession has been uploaded successfully.",
+          });
+        } catch (error) {
+          console.error('Error uploading recorded audio:', error);
+          // Don't fallback to local URL as it won't persist after refresh
+          toast({
+            title: "Upload Failed 🎤❌",
+            description: "Audio recording failed to upload. Storage is currently unavailable.",
+            variant: "destructive"
+          });
+        } finally {
+          setIsUploadingRecording(false);
+        }
 
         // Release microphone
         stream.getTracks().forEach(track => track.stop());
@@ -61,8 +85,8 @@ const AudioRecorder = ({ audioUrl, setAudioUrl, setAudioBlob, handleFileUpload }
       setIsRecording(false);
       
       toast({
-        title: "Recording Completed! 🔊",
-        description: "Preview your audio confession before posting.",
+        title: "Processing Recording... �",
+        description: "Uploading your audio confession...",
       });
     }
   };
@@ -75,19 +99,21 @@ const AudioRecorder = ({ audioUrl, setAudioUrl, setAudioBlob, handleFileUpload }
           type="button"
           onClick={isRecording ? handleStopRecording : handleStartRecording}
           className={`retro-button flex items-center ${isRecording ? 'bg-retro-hot-pink animate-pulse' : ''}`}
+          disabled={isUploadingRecording}
         >
           <Mic className="w-4 h-4 mr-2" />
-          {isRecording ? 'STOP RECORDING' : 'RECORD AUDIO'}
+          {isRecording ? 'STOP RECORDING' : isUploadingRecording ? 'UPLOADING...' : 'RECORD AUDIO'}
         </button>
         
-        <label className="retro-button flex items-center cursor-pointer">
+        <label className={`retro-button flex items-center cursor-pointer ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
           <Upload className="w-4 h-4 mr-2" />
-          UPLOAD AUDIO
+          {isUploading ? 'UPLOADING...' : 'UPLOAD AUDIO'}
           <input
             type="file"
             accept="audio/*"
             onChange={handleFileUpload}
             className="hidden"
+            disabled={isUploading}
           />
         </label>
       </div>

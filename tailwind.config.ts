@@ -71,7 +71,8 @@ export default {
 					'electric-blue': '#0080ff',
 					'neon-purple': '#8a2be2',
 					'lime': '#32cd32',
-					'magenta': '#ff00ff'
+					'magenta': '#ff00ff',
+					'pastel-blue': '#87ceeb'
 				}
 			},
 			fontFamily: {

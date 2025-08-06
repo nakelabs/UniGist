@@ -13,9 +13,35 @@ export const useConfessions = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  const cleanupOldConfessions = async () => {
+    try {
+      // Calculate 24 hours ago
+      const oneDayAgo = new Date();
+      oneDayAgo.setHours(oneDayAgo.getHours() - 24);
+      
+      // Delete confessions older than 24 hours
+      const { error } = await supabase
+        .from('confessions')
+        .delete()
+        .lt('created_at', oneDayAgo.toISOString());
+
+      if (error) {
+        console.error('Error cleaning up old confessions:', error);
+      } else {
+        console.log('Daily cleanup completed - removed confessions older than 24 hours');
+      }
+    } catch (error) {
+      console.error('Error during daily cleanup:', error);
+    }
+  };
+
   const fetchConfessions = async () => {
+    console.log('Fetching confessions from database...');
     try {
       setLoading(true);
+      
+      // First, clean up old confessions (older than 24 hours)
+      await cleanupOldConfessions();
       
       // Fetch confessions
       const { data: confessionsData, error: confessionsError } = await supabase
@@ -25,6 +51,8 @@ export const useConfessions = () => {
 
       if (confessionsError) throw confessionsError;
 
+      console.log('Fetched confessions:', confessionsData);
+
       // Fetch comments for all confessions
       const { data: commentsData, error: commentsError } = await supabase
         .from('comments')
@@ -32,6 +60,8 @@ export const useConfessions = () => {
         .order('created_at', { ascending: true });
 
       if (commentsError) throw commentsError;
+
+      console.log('Fetched comments:', commentsData);
 
       // Group comments by confession_id
       const commentsByConfession = commentsData?.reduce((acc, comment) => {
@@ -50,6 +80,7 @@ export const useConfessions = () => {
         isNew: false
       })) || [];
 
+      console.log('Setting confessions state with:', confessionsWithComments);
       setConfessions(confessionsWithComments);
     } catch (error) {
       console.error('Error fetching confessions:', error);
@@ -163,6 +194,48 @@ export const useConfessions = () => {
     ));
   };
 
+  const updateVoteCount = (confessionId: string, type: 'up' | 'down', wasVoted: boolean, hadOppositeVote: boolean) => {
+    setConfessions(prev => prev.map(confession => {
+      if (confession.id === confessionId) {
+        let newUpvotes = confession.upvotes || 0;
+        let newDownvotes = confession.downvotes || 0;
+        
+        if (type === 'up') {
+          if (wasVoted) {
+            // User is un-upvoting
+            newUpvotes = Math.max(0, newUpvotes - 1);
+          } else {
+            // User is upvoting
+            newUpvotes = newUpvotes + 1;
+            // If they previously downvoted, remove that downvote
+            if (hadOppositeVote) {
+              newDownvotes = Math.max(0, newDownvotes - 1);
+            }
+          }
+        } else if (type === 'down') {
+          if (wasVoted) {
+            // User is un-downvoting
+            newDownvotes = Math.max(0, newDownvotes - 1);
+          } else {
+            // User is downvoting
+            newDownvotes = newDownvotes + 1;
+            // If they previously upvoted, remove that upvote
+            if (hadOppositeVote) {
+              newUpvotes = Math.max(0, newUpvotes - 1);
+            }
+          }
+        }
+        
+        return {
+          ...confession,
+          upvotes: newUpvotes,
+          downvotes: newDownvotes
+        };
+      }
+      return confession;
+    }));
+  };
+
   useEffect(() => {
     fetchConfessions();
 
@@ -171,7 +244,8 @@ export const useConfessions = () => {
       .channel('confessions_changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'confessions' },
-        () => {
+        (payload) => {
+          console.log('Confessions table change detected:', payload);
           fetchConfessions();
         }
       )
@@ -181,15 +255,25 @@ export const useConfessions = () => {
       .channel('comments_changes')
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'comments' },
-        () => {
+        (payload) => {
+          console.log('Comments table change detected:', payload);
           fetchConfessions();
         }
       )
       .subscribe();
 
+    // Listen for forced refresh events from admin panel
+    const handleForceRefresh = () => {
+      console.log('Force refresh event received, fetching confessions...');
+      fetchConfessions();
+    };
+
+    window.addEventListener('forceRefreshFeed', handleForceRefresh);
+
     return () => {
       confessionsSubscription.unsubscribe();
       commentsSubscription.unsubscribe();
+      window.removeEventListener('forceRefreshFeed', handleForceRefresh);
     };
   }, []);
 
@@ -199,6 +283,7 @@ export const useConfessions = () => {
     createConfession,
     addComment,
     toggleComments,
+    updateVoteCount,
     refetch: fetchConfessions
   };
 };
