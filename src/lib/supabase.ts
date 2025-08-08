@@ -15,7 +15,9 @@ export interface Confession {
   content: string;
   audio_url?: string;
   video_url?: string;
+  video_context?: string;
   image_url?: string;
+  image_context?: string;
   tags: string[];
   upvotes: number;
   downvotes: number;

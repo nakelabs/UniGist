@@ -1,23 +1,14 @@
 import { useState, useEffect } from 'react';
-import { supabase, generateUserFingerprint } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-
-export interface Reaction {
-  id: string;
-  user_fingerprint: string;
-  target_type: 'confession' | 'comment';
-  target_id: string;
-  emoji: string;
-  created_at: string;
-}
 
 export interface ReactionCounts {
   [emoji: string]: number;
 }
 
-export interface UserReactions {
-  confessions: Record<string, string[]>; // target_id -> array of emojis user reacted with
-  comments: Record<string, string[]>;
+interface UserReactions {
+  confessions: { [confessionId: string]: string[] };
+  comments: { [commentId: string]: string[] };
 }
 
 export const useReactions = () => {
@@ -25,128 +16,140 @@ export const useReactions = () => {
     confessions: {},
     comments: {}
   });
-  const [userFingerprint] = useState(() => generateUserFingerprint());
+  
   const { toast } = useToast();
 
-  // Available emoji reactions
-  const availableEmojis = [
-    '😂', '😭', '😱', '🔥', '💯', '❤️', '👏', '😍', 
-    '🤔', '😬', '🤯', '👀', '💀', '🙄', '😤', '🥺'
-  ];
+  // Available emojis for reactions
+  const availableEmojis = ['😂', '😭', '😱', '🔥', '💯', '❤️', '👏', '😍', '🤔', '😬', '🤯', '👀', '💀', '🙄', '😤', '🥺'];
 
-  const loadUserReactions = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('reactions')
-        .select('*')
-        .eq('user_fingerprint', userFingerprint);
+  // Get user fingerprint for anonymous tracking
+  const getUserFingerprint = () => {
+    const fingerprint = localStorage.getItem('user_fingerprint');
+    if (fingerprint) {
+      return fingerprint;
+    }
+    
+    // Create a simple fingerprint based on browser characteristics
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx!.textBaseline = 'top';
+    ctx!.font = '14px Arial';
+    ctx!.fillText('Browser fingerprint', 2, 2);
+    
+    const newFingerprint = canvas.toDataURL() + navigator.userAgent + screen.width + screen.height;
+    const hash = btoa(newFingerprint).slice(0, 16);
+    
+    localStorage.setItem('user_fingerprint', hash);
+    return hash;
+  };
 
-      if (error) throw error;
-
-      const reactions: UserReactions = {
-        confessions: {},
-        comments: {}
-      };
-
-      data?.forEach(reaction => {
-        const targetType = reaction.target_type === 'confession' ? 'confessions' : 'comments';
-        if (!reactions[targetType][reaction.target_id]) {
-          reactions[targetType][reaction.target_id] = [];
-        }
-        reactions[targetType][reaction.target_id].push(reaction.emoji);
-      });
-
-      setUserReactions(reactions);
-    } catch (error) {
-      console.error('Error loading user reactions:', error);
+  // Load user reactions from localStorage
+  const loadUserReactions = () => {
+    const saved = localStorage.getItem('user_reactions');
+    if (saved) {
+      setUserReactions(JSON.parse(saved));
     }
   };
 
-  const toggleReaction = async (
-    targetId: string,
-    emoji: string,
-    targetType: 'confession' | 'comment'
-  ) => {
-    const reactionsKey = targetType === 'confession' ? 'confessions' : 'comments';
-    const currentReactions = userReactions[reactionsKey][targetId] || [];
-    const hasReacted = currentReactions.includes(emoji);
+  // Save user reactions to localStorage
+  const saveUserReactions = (reactions: UserReactions) => {
+    localStorage.setItem('user_reactions', JSON.stringify(reactions));
+    setUserReactions(reactions);
+  };
 
+  // Toggle reaction
+  const toggleReaction = async (targetId: string, emoji: string, targetType: 'confession' | 'comment'): Promise<boolean> => {
     try {
-      if (hasReacted) {
+      const fingerprint = getUserFingerprint();
+      const reactionsKey = targetType === 'confession' ? 'confessions' : 'comments';
+      const currentReactions = userReactions[reactionsKey][targetId] || [];
+      
+      let newReactions: string[];
+      let action: 'add' | 'remove';
+
+      if (currentReactions.includes(emoji)) {
         // Remove reaction
-        const { error } = await supabase
-          .from('reactions')
-          .delete()
-          .eq('user_fingerprint', userFingerprint)
-          .eq('target_type', targetType)
-          .eq('target_id', targetId)
-          .eq('emoji', emoji);
-
-        if (error) throw error;
-
-        // Update local state
-        setUserReactions(prev => ({
-          ...prev,
-          [reactionsKey]: {
-            ...prev[reactionsKey],
-            [targetId]: currentReactions.filter(e => e !== emoji)
-          }
-        }));
-
-        toast({
-          title: "Reaction removed",
-          description: `Removed ${emoji} reaction`,
-        });
+        newReactions = currentReactions.filter(e => e !== emoji);
+        action = 'remove';
       } else {
         // Add reaction
+        newReactions = [...currentReactions, emoji];
+        action = 'add';
+      }
+
+      // Update local state first for immediate feedback
+      const updatedUserReactions = {
+        ...userReactions,
+        [reactionsKey]: {
+          ...userReactions[reactionsKey],
+          [targetId]: newReactions
+        }
+      };
+      saveUserReactions(updatedUserReactions);
+
+      // Sync with database
+      if (action === 'add') {
         const { error } = await supabase
           .from('reactions')
           .insert({
-            user_fingerprint: userFingerprint,
-            target_type: targetType,
             target_id: targetId,
-            emoji: emoji
+            target_type: targetType,
+            emoji: emoji,
+            user_fingerprint: fingerprint
           });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error adding reaction:', error);
+          // Revert on error
+          saveUserReactions(userReactions);
+          return false;
+        }
+      } else {
+        const { error } = await supabase
+          .from('reactions')
+          .delete()
+          .match({
+            target_id: targetId,
+            target_type: targetType,
+            emoji: emoji,
+            user_fingerprint: fingerprint
+          });
 
-        // Update local state
-        setUserReactions(prev => ({
-          ...prev,
-          [reactionsKey]: {
-            ...prev[reactionsKey],
-            [targetId]: [...currentReactions, emoji]
-          }
-        }));
-
-        toast({
-          title: "Reaction added",
-          description: `Added ${emoji} reaction`,
-        });
+        if (error) {
+          console.error('Error removing reaction:', error);
+          // Revert on error
+          saveUserReactions(userReactions);
+          return false;
+        }
       }
 
       return true;
     } catch (error) {
       console.error('Error toggling reaction:', error);
       toast({
-        title: "Error",
-        description: "Failed to update reaction. Please try again.",
+        title: "Reaction Failed 😵",
+        description: "Couldn't update your reaction. Please try again.",
         variant: "destructive"
       });
       return false;
     }
   };
 
+  // Get reaction counts for a target
   const getReactionCounts = async (targetId: string, targetType: 'confession' | 'comment'): Promise<ReactionCounts> => {
     try {
       const { data, error } = await supabase
         .from('reactions')
         .select('emoji')
-        .eq('target_type', targetType)
-        .eq('target_id', targetId);
+        .eq('target_id', targetId)
+        .eq('target_type', targetType);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching reaction counts:', error);
+        return {};
+      }
 
+      // Count reactions by emoji
       const counts: ReactionCounts = {};
       data?.forEach(reaction => {
         counts[reaction.emoji] = (counts[reaction.emoji] || 0) + 1;
@@ -159,9 +162,10 @@ export const useReactions = () => {
     }
   };
 
+  // Load user reactions on mount
   useEffect(() => {
     loadUserReactions();
-  }, [userFingerprint]);
+  }, []);
 
   return {
     userReactions,

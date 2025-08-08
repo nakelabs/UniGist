@@ -98,7 +98,9 @@ export const useConfessions = () => {
     content: string;
     audioUrl?: string;
     videoUrl?: string;
+    videoContext?: string;
     imageUrl?: string;
+    imageContext?: string;
     tags?: string[];
   }) => {
     try {
@@ -108,7 +110,9 @@ export const useConfessions = () => {
           content: confessionData.content,
           audio_url: confessionData.audioUrl,
           video_url: confessionData.videoUrl,
+          video_context: confessionData.videoContext,
           image_url: confessionData.imageUrl,
+          image_context: confessionData.imageContext,
           tags: confessionData.tags || []
         })
         .select()

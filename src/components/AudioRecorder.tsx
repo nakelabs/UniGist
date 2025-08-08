@@ -48,10 +48,13 @@ const AudioRecorder = ({ audioUrl, setAudioUrl, setAudioBlob, handleFileUpload, 
           });
         } catch (error) {
           console.error('Error uploading recorded audio:', error);
-          // Don't fallback to local URL as it won't persist after refresh
+          // Fallback to local URL if upload fails
+          const localUrl = URL.createObjectURL(audioBlob);
+          setAudioUrl(localUrl);
+          
           toast({
-            title: "Upload Failed 🎤❌",
-            description: "Audio recording failed to upload. Storage is currently unavailable.",
+            title: "Recording Saved Locally 🎤⚠️",
+            description: "Audio saved but upload failed. May not persist after refresh.",
             variant: "destructive"
           });
         } finally {
@@ -92,7 +95,7 @@ const AudioRecorder = ({ audioUrl, setAudioUrl, setAudioBlob, handleFileUpload, 
   };
   
   return (
-    <div className="p-3 border-2 border-retro-electric-blue bg-black/70">
+    <div className="p-4 border-2 border-retro-electric-blue bg-black/70 rounded-2xl">
       <h3 className="text-retro-cyber-yellow font-cyber text-sm mb-3">Audio Confession:</h3>
       <div className="flex flex-wrap gap-3 items-center">
         <button

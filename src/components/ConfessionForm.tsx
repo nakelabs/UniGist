@@ -10,7 +10,9 @@ interface ConfessionFormProps {
     content: string;
     audioUrl?: string;
     videoUrl?: string;
+    videoContext?: string;
     imageUrl?: string;
+    imageContext?: string;
     tags?: string[];
   }) => Promise<void>;
 }
@@ -26,12 +28,14 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   
-  // Video recording states
+  // Video upload states
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
+  const [videoContext, setVideoContext] = useState<string>('');
   
   // Image upload state
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageContext, setImageContext] = useState<string>('');
 
   const addTag = () => {
     const trimmedTag = currentTag.trim().toLowerCase();
@@ -62,10 +66,11 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
         content: newConfession,
         audioUrl: audioUrl || undefined,
         videoUrl: videoUrl || undefined,
+        videoContext: videoContext || undefined,
         imageUrl: imageUrl || undefined,
+        imageContext: imageContext || undefined,
         tags: tags
       });
-
       // Reset form
       setNewConfession('');
       setTags([]);
@@ -74,7 +79,9 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
       setAudioBlob(null);
       setVideoUrl(null);
       setVideoBlob(null);
+      setVideoContext('');
       setImageUrl(null);
+      setImageContext('');
     } catch (error) {
       console.error('Error submitting confession:', error);
     } finally {
@@ -113,29 +120,43 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
       
       // Show user-friendly error message
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      console.log(`Upload Failed! ❌ - ${errorMessage}. File upload is currently unavailable.`);
+      console.log(`Upload Failed! ❌ - ${errorMessage}. Please try again.`);
       
-      // Don't create blob URLs as they won't persist after refresh
-      // Instead, show an error and let user know file upload is temporarily unavailable
-      alert(`File upload failed: ${errorMessage}\n\nPlease try uploading your file again later. You can still post text confessions.`);
+      // For audio/video, we can still use local URLs as fallback
+      if (file.type.startsWith('audio/')) {
+        const localUrl = URL.createObjectURL(file);
+        setAudioUrl(localUrl);
+        setAudioBlob(file);
+        console.log("Audio saved locally temporarily. ⚠️ - Will not persist after refresh.");
+      } else if (file.type.startsWith('video/')) {
+        const localUrl = URL.createObjectURL(file);
+        setVideoUrl(localUrl);
+        setVideoBlob(file);
+        console.log("Video saved locally temporarily. ⚠️ - Will not persist after refresh.");
+      } else if (file.type.startsWith('image/')) {
+        const localUrl = URL.createObjectURL(file);
+        setImageUrl(localUrl);
+        console.log("Image saved locally temporarily. ⚠️ - Will not persist after refresh.");
+      }
     } finally {
       setIsUploading(false);
     }
   };
 
   return (
-    <div className="retro-card max-w-2xl mx-auto mb-12">
+    <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm rounded-3xl p-8 border border-gray-700/50 max-w-2xl mx-auto mb-12"
+    >
       <h2 className="font-pixel text-lg text-retro-cyber-yellow mb-4 animate-glow">
         🗣️ SPILL THE TEA
       </h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <textarea
-          value={newConfession}
-          onChange={(e) => setNewConfession(e.target.value)}
-          placeholder="Type your anonymous confession here... no judgment, just vibes ✨"
-          className="retro-input w-full h-32 resize-none"
-          maxLength={500}
-        />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <textarea
+            value={newConfession}
+            onChange={(e) => setNewConfession(e.target.value)}
+            placeholder="Type your anonymous confession here... no judgment, just vibes ✨"
+            className="w-full h-32 resize-none bg-gray-900/50 border border-retro-electric-blue/30 rounded-2xl p-4 text-retro-neon-green font-cyber focus:outline-none focus:border-retro-cyber-yellow focus:ring-1 focus:ring-retro-cyber-yellow transition-all"
+            maxLength={500}
+          />
 
         {/* Tags Input */}
         <div className="space-y-2">
@@ -153,14 +174,14 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
               onChange={(e) => setCurrentTag(e.target.value)}
               onKeyPress={handleTagKeyPress}
               placeholder="Type a tag and press Enter..."
-              className="flex-1 bg-gray-900/50 border border-retro-electric-blue/30 rounded p-2 text-retro-neon-green font-cyber text-sm focus:outline-none focus:border-retro-cyber-yellow"
+              className="flex-1 bg-gray-900/50 border border-retro-electric-blue/30 rounded-2xl p-3 text-retro-neon-green font-cyber text-sm focus:outline-none focus:border-retro-cyber-yellow focus:ring-1 focus:ring-retro-cyber-yellow transition-all"
               maxLength={20}
             />
             <button
               type="button"
               onClick={addTag}
               disabled={!currentTag.trim() || tags.length >= 5}
-              className="px-3 py-2 bg-retro-cyber-yellow text-black font-pixel text-xs hover:bg-retro-neon-green disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-3 bg-retro-cyber-yellow text-black font-pixel text-xs hover:bg-retro-neon-green disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl transition-all"
             >
               Add
             </button>
@@ -172,7 +193,7 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
               {tags.map((tag, index) => (
                 <span
                   key={index}
-                  className="flex items-center gap-1 px-2 py-1 bg-retro-electric-blue/20 border border-retro-electric-blue/40 text-retro-electric-blue font-pixel text-xs"
+                  className="flex items-center gap-1 px-3 py-1 bg-retro-electric-blue/20 border border-retro-electric-blue/40 text-retro-electric-blue font-pixel text-xs rounded-full"
                 >
                   #{tag}
                   <button
@@ -193,7 +214,7 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
           </div>
         </div>
         
-        {/* Media Recording and Upload Section */}
+        {/* Media Upload Section */}
         <div className="space-y-4">
           {/* Audio controls */}
           <AudioRecorder 
@@ -210,6 +231,8 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
             setVideoUrl={setVideoUrl}
             setVideoBlob={setVideoBlob}
             handleFileUpload={handleFileUpload}
+            videoContext={videoContext}
+            setVideoContext={setVideoContext}
           />
 
           {/* Image upload */}
@@ -217,6 +240,8 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
             imageUrl={imageUrl}
             setImageUrl={setImageUrl}
             handleFileUpload={handleFileUpload}
+            imageContext={imageContext}
+            setImageContext={setImageContext}
           />
         </div>
         
@@ -226,7 +251,7 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
           </span>
           <button
             type="submit"
-            className="retro-button"
+            className="px-6 py-3 bg-gradient-to-r from-retro-electric-blue to-retro-hot-pink rounded-2xl text-white font-bold hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             disabled={(!newConfession.trim() && !audioUrl && !videoUrl && !imageUrl) || isSubmitting || isUploading}
           >
             {isUploading ? 'UPLOADING...' : isSubmitting ? 'POSTING...' : 'CONFESS NOW! 🚀'}

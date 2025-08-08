@@ -55,55 +55,101 @@ const EmojiReactions = ({ targetId, targetType, className = '' }: EmojiReactions
   const reactedEmojis = Object.keys(reactionCounts).filter(emoji => reactionCounts[emoji] > 0);
 
   return (
-    <div className={`flex flex-wrap items-center gap-2 ${className}`}>
-      {/* Display existing reactions */}
+    <div className={`flex flex-wrap items-center gap-3 ${className}`}>
+      {/* Enhanced reaction display */}
       {reactedEmojis.map(emoji => (
         <button
           key={emoji}
           onClick={() => handleEmojiClick(emoji)}
-          className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-cyber transition-all ${
+          className={`group flex items-center gap-2 px-3 py-2 rounded-2xl text-xs font-cyber transition-all duration-300 ${
             userTargetReactions.includes(emoji)
-              ? 'bg-retro-electric-blue/30 border border-retro-electric-blue text-retro-electric-blue'
-              : 'bg-gray-800/50 border border-gray-600/30 text-gray-300 hover:bg-gray-700/50 hover:border-gray-500/50'
+              ? 'bg-gradient-to-r from-retro-electric-blue/30 to-retro-electric-blue/20 border border-retro-electric-blue text-retro-electric-blue shadow-lg shadow-retro-electric-blue/20 scale-105'
+              : 'bg-gray-800/60 border border-gray-600/40 text-gray-300 hover:bg-gradient-to-r hover:from-gray-700/60 hover:to-gray-600/60 hover:border-gray-500/60 hover:scale-105 hover:shadow-md'
           }`}
-          title={userTargetReactions.includes(emoji) ? 'Remove reaction' : 'Add reaction'}
+          title={userTargetReactions.includes(emoji) ? `Remove ${emoji} reaction` : `Add ${emoji} reaction`}
         >
-          <span className="text-sm">{emoji}</span>
-          <span className="text-xs">{reactionCounts[emoji]}</span>
+          <span className="text-base transform group-hover:scale-110 transition-transform duration-200">{emoji}</span>
+          <span className={`text-xs font-pixel ${
+            userTargetReactions.includes(emoji) ? 'text-retro-electric-blue' : 'text-gray-400'
+          }`}>
+            {reactionCounts[emoji]}
+          </span>
+          {userTargetReactions.includes(emoji) && (
+            <div className="w-1 h-1 bg-retro-electric-blue rounded-full animate-pulse"></div>
+          )}
         </button>
       ))}
 
-      {/* Add reaction button */}
-      <div className="relative" ref={pickerRef}>
+      {/* Enhanced add reaction button */}
+      <div className="relative inline-block" ref={pickerRef}>
         <button
           onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-          className="flex items-center justify-center w-7 h-7 rounded-full bg-gray-800/50 border border-gray-600/30 text-gray-400 hover:bg-retro-cyber-yellow/20 hover:border-retro-cyber-yellow/50 hover:text-retro-cyber-yellow transition-all"
-          title="Add reaction"
+          className={`group flex items-center justify-center w-9 h-9 rounded-2xl border transition-all duration-300 ${
+            showEmojiPicker
+              ? 'bg-gradient-to-r from-retro-cyber-yellow/30 to-retro-hot-pink/30 border-retro-cyber-yellow text-retro-cyber-yellow shadow-lg shadow-retro-cyber-yellow/30 scale-110'
+              : 'bg-gray-800/60 border-gray-600/40 text-gray-400 hover:bg-gradient-to-r hover:from-retro-cyber-yellow/20 hover:to-retro-electric-blue/20 hover:border-retro-cyber-yellow/60 hover:text-retro-cyber-yellow hover:scale-110 hover:shadow-lg hover:shadow-retro-cyber-yellow/20'
+          }`}
+          title={showEmojiPicker ? "Close emoji picker" : "Add reaction"}
         >
-          {showEmojiPicker ? <X className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+          <div className="relative">
+            {showEmojiPicker ? (
+              <X className="w-4 h-4 transform group-hover:rotate-90 transition-transform duration-300" />
+            ) : (
+              <Plus className="w-4 h-4 transform group-hover:rotate-90 transition-transform duration-300" />
+            )}
+            {!showEmojiPicker && (
+              <div className="absolute inset-0 bg-gradient-to-r from-retro-cyber-yellow/0 to-retro-electric-blue/0 group-hover:from-retro-cyber-yellow/40 group-hover:to-retro-electric-blue/40 rounded-full transition-all duration-300 -z-10"></div>
+            )}
+          </div>
         </button>
 
-        {/* Emoji picker dropdown */}
+        {/* Enhanced Emoji picker dropdown */}
         {showEmojiPicker && (
-          <div className="absolute top-8 left-0 z-10 bg-black border border-retro-electric-blue/50 rounded-lg p-3 shadow-lg">
-            <div className="grid grid-cols-4 gap-2 max-w-48">
-              {availableEmojis.map(emoji => (
+          <div className="absolute bottom-full mb-2 right-0 z-[60] max-w-xs">
+            {/* Main picker container */}
+            <div className="relative bg-gradient-to-br from-gray-900/98 to-black/98 backdrop-blur-xl border border-retro-electric-blue/60 rounded-2xl p-4 shadow-2xl shadow-retro-electric-blue/30">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-retro-electric-blue rounded-full animate-pulse"></div>
+                  <span className="font-cyber text-xs text-retro-electric-blue uppercase tracking-wide">Choose Reaction</span>
+                </div>
                 <button
-                  key={emoji}
-                  onClick={() => handleEmojiClick(emoji)}
-                  className={`w-8 h-8 flex items-center justify-center text-lg rounded hover:bg-retro-electric-blue/20 transition-all ${
-                    userTargetReactions.includes(emoji)
-                      ? 'bg-retro-electric-blue/30 border border-retro-electric-blue'
-                      : 'hover:scale-110'
-                  }`}
-                  title={`React with ${emoji}`}
+                  onClick={() => setShowEmojiPicker(false)}
+                  className="w-6 h-6 flex items-center justify-center rounded-full bg-retro-hot-pink/20 text-retro-hot-pink hover:bg-retro-hot-pink/40 transition-all duration-200"
+                  title="Close emoji picker"
                 >
-                  {emoji}
+                  <X className="w-3 h-3" />
                 </button>
-              ))}
-            </div>
-            <div className="text-xs text-gray-400 mt-2 text-center font-cyber">
-              Click to react
+              </div>
+
+              {/* Emoji grid */}
+              <div className="grid grid-cols-6 gap-2">
+                {availableEmojis.map(emoji => (
+                  <button
+                    key={emoji}
+                    onClick={() => handleEmojiClick(emoji)}
+                    className={`group w-8 h-8 flex items-center justify-center text-lg rounded-lg transition-all duration-200 ${
+                      userTargetReactions.includes(emoji)
+                        ? 'bg-retro-electric-blue/40 border border-retro-electric-blue text-white shadow-md shadow-retro-electric-blue/40'
+                        : 'bg-gray-800/60 border border-gray-600/40 hover:bg-retro-electric-blue/20 hover:border-retro-electric-blue/60 hover:scale-110'
+                    }`}
+                    title={`React with ${emoji}`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+              
+              {/* Footer */}
+              <div className="text-center pt-3 mt-3 border-t border-gray-700/50">
+                <span className="text-xs text-gray-400 font-cyber">
+                  Click to react
+                </span>
+              </div>
+              
+              {/* Arrow pointer */}
+              <div className="absolute top-full right-4 w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-retro-electric-blue/60"></div>
             </div>
           </div>
         )}

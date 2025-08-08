@@ -209,104 +209,138 @@ const Index = () => {
             </p>
           </div>
           
-          {/* Sorting and Search Controls */}
-          <div className="space-y-4 mb-6">
-            {/* Sorting Options */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-cyber text-sm text-retro-cyber-yellow">Sort by:</span>
+          {/* Modern Sorting and Search Controls */}
+          <div className="bg-gradient-to-r from-gray-800/60 to-gray-900/60 backdrop-blur-lg rounded-3xl p-6 border border-gray-700/50 mb-8 shadow-xl">
+            {/* Top Row: Search Bar with Stats */}
+            <div className="flex flex-col lg:flex-row gap-4 mb-6">
+              {/* Enhanced Search Bar */}
+              <div className="relative flex-1">
+                <div className="absolute inset-0 bg-gradient-to-r from-retro-electric-blue/20 to-retro-cyber-yellow/20 rounded-2xl blur-sm"></div>
+                <div className="relative bg-gray-900/80 backdrop-blur-sm rounded-2xl border border-retro-electric-blue/30 overflow-hidden">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-retro-electric-blue" />
+                  <input
+                    type="text"
+                    placeholder="🔍 Search confessions, tags, or keywords..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-12 pr-12 py-4 bg-transparent text-retro-neon-green font-cyber text-sm placeholder-retro-electric-blue/60 focus:outline-none focus:ring-2 focus:ring-retro-cyber-yellow/50 transition-all"
+                  />
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-retro-hot-pink hover:text-retro-cyber-yellow transition-colors p-1 rounded-full hover:bg-retro-hot-pink/20"
+                      title="Clear search"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              
+              {/* Refresh Button */}
               <button
-                onClick={() => setSortBy('newest')}
-                className={`px-3 py-1 font-pixel text-xs border transition-all ${
-                  sortBy === 'newest'
-                    ? 'bg-retro-electric-blue text-black border-retro-electric-blue'
-                    : 'bg-transparent text-retro-electric-blue border-retro-electric-blue/50 hover:border-retro-electric-blue'
-                }`}
+                onClick={refetch}
+                className="flex items-center justify-center px-6 py-4 bg-gradient-to-r from-retro-electric-blue/20 to-retro-cyber-yellow/20 border border-retro-electric-blue/40 rounded-2xl text-retro-electric-blue hover:border-retro-cyber-yellow hover:shadow-lg hover:shadow-retro-cyber-yellow/30 transition-all duration-300 font-cyber text-sm whitespace-nowrap group"
+                title="Refresh confessions"
               >
-                🕐 NEWEST
-              </button>
-              <button
-                onClick={() => setSortBy('most-liked')}
-                className={`px-3 py-1 font-pixel text-xs border transition-all ${
-                  sortBy === 'most-liked'
-                    ? 'bg-retro-neon-green text-black border-retro-neon-green'
-                    : 'bg-transparent text-retro-neon-green border-retro-neon-green/50 hover:border-retro-neon-green'
-                }`}
-              >
-                🔥 MOST LIKED
-              </button>
-              <button
-                onClick={() => setSortBy('controversial')}
-                className={`px-3 py-1 font-pixel text-xs border transition-all ${
-                  sortBy === 'controversial'
-                    ? 'bg-retro-hot-pink text-black border-retro-hot-pink'
-                    : 'bg-transparent text-retro-hot-pink border-retro-hot-pink/50 hover:border-retro-hot-pink'
-                }`}
-              >
-                💥 CONTROVERSIAL
+                <RefreshCw className="w-5 h-5 mr-2 group-hover:rotate-180 transition-transform duration-500" />
+                Refresh
               </button>
             </div>
-            
-            {/* Sorting Status */}
-            <div className="text-center">
-              <span className="font-cyber text-xs text-retro-electric-blue/70">
-                Showing {getFilteredAndSortedConfessions().length} confession{getFilteredAndSortedConfessions().length === 1 ? '' : 's'}
-                {sortBy === 'newest' && ' • Sorted by newest first'}
-                {sortBy === 'most-liked' && ' • Sorted by most liked'}
-                {sortBy === 'controversial' && ' • Sorted by most controversial'}
-              </span>
-            </div>
-          </div>
-          
-          {/* Search Bar and Refresh Button */}
-          <div className="flex flex-col sm:flex-row gap-2 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-retro-electric-blue" />
-              <input
-                type="text"
-                placeholder="Search confessions by keywords or tags..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-10 py-3 bg-gray-900/50 border border-retro-electric-blue/30 rounded text-retro-neon-green font-cyber text-sm focus:outline-none focus:border-retro-cyber-yellow focus:ring-1 focus:ring-retro-cyber-yellow"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-retro-hot-pink hover:text-retro-cyber-yellow transition-colors"
-                  title="Clear search"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-            <button
-              onClick={refetch}
-              className="flex items-center justify-center px-4 py-3 bg-retro-electric-blue/20 border border-retro-electric-blue/30 rounded text-retro-electric-blue hover:bg-retro-electric-blue/30 hover:border-retro-cyber-yellow hover:text-retro-cyber-yellow transition-all duration-200 font-cyber text-sm"
-              title="Refresh confessions"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </button>
-          </div>
-          
-          {/* Search Results Info */}
-          {searchTerm && (
-            <div className="text-center mb-4">
-              <span className="font-cyber text-sm text-retro-electric-blue">
-                {getFilteredAndSortedConfessions().length === 0 
-                  ? `No confessions found for "${searchTerm}" 🔍`
-                  : `Found ${getFilteredAndSortedConfessions().length} confession${getFilteredAndSortedConfessions().length === 1 ? '' : 's'} matching "${searchTerm}"`
-                }
-              </span>
-              {getFilteredAndSortedConfessions().length === 0 && (
-                <div className="mt-2">
+
+            {/* Bottom Row: Sort Controls and Stats */}
+            <div className="flex flex-col gap-4">
+              {/* Enhanced Sort Options */}
+              <div className="flex flex-col xs:flex-row xs:items-center gap-3">
+                <span className="font-cyber text-sm text-retro-cyber-yellow flex items-center gap-2 whitespace-nowrap">
+                  <span className="w-2 h-2 bg-retro-cyber-yellow rounded-full animate-pulse"></span>
+                  Sort by:
+                </span>
+                <div className="flex flex-col xs:flex-row gap-2 w-full xs:w-auto">
                   <button
-                    onClick={() => setSearchTerm('')}
-                    className="px-3 py-1 text-xs bg-retro-neon-green text-black font-pixel hover:bg-retro-cyber-yellow transition-all"
+                    onClick={() => setSortBy('newest')}
+                    className={`px-3 py-2 font-pixel text-xs rounded-xl border transition-all duration-300 flex-1 xs:flex-initial ${
+                      sortBy === 'newest'
+                        ? 'bg-gradient-to-r from-retro-electric-blue to-retro-electric-blue/80 text-white border-retro-electric-blue shadow-lg shadow-retro-electric-blue/30'
+                        : 'bg-gray-800/50 text-retro-electric-blue border-retro-electric-blue/50 hover:border-retro-electric-blue hover:bg-retro-electric-blue/10'
+                    }`}
                   >
-                    Clear Search
+                    <span className="hidden xs:inline">🕐 NEWEST</span>
+                    <span className="xs:hidden">🕐 NEW</span>
+                  </button>
+                  <button
+                    onClick={() => setSortBy('most-liked')}
+                    className={`px-3 py-2 font-pixel text-xs rounded-xl border transition-all duration-300 flex-1 xs:flex-initial ${
+                      sortBy === 'most-liked'
+                        ? 'bg-gradient-to-r from-retro-neon-green to-retro-neon-green/80 text-black border-retro-neon-green shadow-lg shadow-retro-neon-green/30'
+                        : 'bg-gray-800/50 text-retro-neon-green border-retro-neon-green/50 hover:border-retro-neon-green hover:bg-retro-neon-green/10'
+                    }`}
+                  >
+                    <span className="hidden xs:inline">🔥 MOST LIKED</span>
+                    <span className="xs:hidden">🔥 LIKED</span>
+                  </button>
+                  <button
+                    onClick={() => setSortBy('controversial')}
+                    className={`px-3 py-2 font-pixel text-xs rounded-xl border transition-all duration-300 flex-1 xs:flex-initial ${
+                      sortBy === 'controversial'
+                        ? 'bg-gradient-to-r from-retro-hot-pink to-retro-hot-pink/80 text-white border-retro-hot-pink shadow-lg shadow-retro-hot-pink/30'
+                        : 'bg-gray-800/50 text-retro-hot-pink border-retro-hot-pink/50 hover:border-retro-hot-pink hover:bg-retro-hot-pink/10'
+                    }`}
+                  >
+                    <span className="hidden xs:inline">💥 CONTROVERSIAL</span>
+                    <span className="xs:hidden">💥 HOT</span>
                   </button>
                 </div>
-              )}
+              </div>
+              
+              {/* Enhanced Stats Display */}
+              <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-gray-700/30 to-gray-800/30 rounded-xl border border-gray-600/30 w-full sm:w-auto">
+                <div className="w-2 h-2 bg-retro-electric-blue rounded-full animate-pulse"></div>
+                <span className="font-cyber text-xs text-retro-electric-blue/80">
+                  <span className="hidden xs:inline">
+                    {getFilteredAndSortedConfessions().length} confession{getFilteredAndSortedConfessions().length === 1 ? '' : 's'}
+                    {sortBy === 'newest' && ' • Latest first'}
+                    {sortBy === 'most-liked' && ' • Most popular'}
+                    {sortBy === 'controversial' && ' • Most debated'}
+                  </span>
+                  <span className="xs:hidden">
+                    {getFilteredAndSortedConfessions().length} post{getFilteredAndSortedConfessions().length === 1 ? '' : 's'}
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Enhanced Search Results Info */}
+          {searchTerm && (
+            <div className="bg-gradient-to-r from-retro-electric-blue/10 to-retro-cyber-yellow/10 backdrop-blur-sm rounded-2xl p-4 mb-6 border border-retro-electric-blue/30">
+              <div className="text-center">
+                {getFilteredAndSortedConfessions().length === 0 ? (
+                  <div className="space-y-3">
+                    <div className="text-retro-hot-pink font-cyber text-lg">
+                      🔍 No confessions found for "{searchTerm}"
+                    </div>
+                    <div className="text-retro-electric-blue/70 font-cyber text-sm">
+                      Try different keywords or check your spelling
+                    </div>
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="px-4 py-2 bg-gradient-to-r from-retro-neon-green to-retro-cyber-yellow text-black font-pixel text-xs rounded-xl hover:shadow-lg hover:shadow-retro-neon-green/30 transition-all duration-300"
+                    >
+                      ✨ Clear Search & Show All
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-2 h-2 bg-retro-neon-green rounded-full animate-pulse"></div>
+                    <span className="font-cyber text-sm text-retro-neon-green">
+                      Found {getFilteredAndSortedConfessions().length} confession{getFilteredAndSortedConfessions().length === 1 ? '' : 's'} matching 
+                      <span className="text-retro-cyber-yellow font-bold"> "{searchTerm}"</span>
+                    </span>
+                    <div className="w-2 h-2 bg-retro-neon-green rounded-full animate-pulse"></div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
           
@@ -321,7 +355,8 @@ const Index = () => {
             </div>
           ) : (
             getFilteredAndSortedConfessions().map((post) => (
-              <div key={post.id} className="retro-card p-6">
+              <div key={post.id} className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm rounded-3xl p-8 border border-gray-700/50 hover:border-retro-cyber-yellow/50 transition-all duration-300 hover:shadow-2xl hover:shadow-retro-cyber-yellow/20"
+              >
                 <div className="space-y-4">
                   <p className="text-retro-neon-green font-cyber">{post.content}</p>
                   
@@ -339,96 +374,155 @@ const Index = () => {
                   )}
                   
                   {post.image_url && (
-                    <img
-                      src={post.image_url}
-                      alt="Confession image"
-                      className="max-w-full h-auto rounded border-2 border-retro-cyber-yellow"
-                    />
+                    <div>
+                      {post.image_context && (
+                        <div className="mb-3 p-3 bg-retro-electric-blue/10 border border-retro-electric-blue/30 rounded-xl">
+                          <p className="text-retro-cyber-yellow text-sm font-cyber mb-1">Image Context:</p>
+                          <p className="text-white text-sm">{post.image_context}</p>
+                        </div>
+                      )}
+                      <img
+                        src={post.image_url}
+                        alt="Confession image"
+                        className="max-w-full h-auto rounded-2xl border-2 border-retro-cyber-yellow shadow-lg shadow-retro-cyber-yellow/20"
+                      />
+                    </div>
                   )}
                   
                   {post.audio_url && (
-                    <audio
-                      controls
-                      className="w-full"
-                    >
-                      <source src={post.audio_url} type="audio/webm" />
-                      <source src={post.audio_url} type="audio/mp3" />
-                      Your browser does not support the audio element.
-                    </audio>
+                    <div className="bg-gradient-to-r from-retro-electric-blue/10 to-retro-neon-green/10 p-4 rounded-2xl border border-retro-electric-blue/30">
+                      <audio
+                        controls
+                        className="w-full rounded-xl"
+                      >
+                        <source src={post.audio_url} type="audio/webm" />
+                        <source src={post.audio_url} type="audio/mp3" />
+                        Your browser does not support the audio element.
+                      </audio>
+                    </div>
                   )}
                   
                   {post.video_url && (
-                    <video
-                      controls
-                      className="max-w-full h-auto rounded border-2 border-retro-cyber-yellow"
-                    >
-                      <source src={post.video_url} type="video/webm" />
-                      <source src={post.video_url} type="video/mp4" />
-                      Your browser does not support the video element.
-                    </video>
+                    <div className="bg-gradient-to-r from-retro-hot-pink/10 to-retro-cyber-yellow/10 p-6 rounded-3xl border border-retro-hot-pink/30 hover:border-retro-hot-pink/50 transition-all duration-300">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-2 h-2 bg-retro-hot-pink rounded-full animate-pulse"></div>
+                        <span className="font-cyber text-sm text-retro-hot-pink">Video Message</span>
+                      </div>
+                      
+                      {post.video_context && (
+                        <div className="mb-4 p-3 bg-gray-800/50 rounded-2xl border border-retro-hot-pink/20">
+                          <p className="text-retro-neon-green/90 font-cyber text-sm leading-relaxed">
+                            {post.video_context}
+                          </p>
+                        </div>
+                      )}
+                      
+                      <video
+                        controls
+                        className="w-full h-auto rounded-2xl border-2 border-retro-cyber-yellow/50 shadow-lg shadow-retro-cyber-yellow/20 hover:border-retro-cyber-yellow transition-all duration-300"
+                      >
+                        <source src={post.video_url} type="video/webm" />
+                        <source src={post.video_url} type="video/mp4" />
+                        Your browser does not support the video element.
+                      </video>
+                    </div>
                   )}
                   
-                  <div className="flex justify-between items-center text-sm">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-4 pt-4 border-t border-gray-700/30">
+                    {/* Main Action Buttons - Responsive Layout */}
+                    <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-2">
+                      {/* Vote Buttons Row */}
+                      <div className="flex items-center gap-2 flex-wrap">
                         <button
                           onClick={() => handleVote(post.id, 'up')}
-                          className={`flex items-center gap-1 px-2 py-1 border transition-all ${
+                          className={`group flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all duration-300 font-cyber text-xs flex-shrink-0 ${
                             userVotes.confessions[post.id]?.upvoted
-                              ? 'bg-retro-electric-blue text-black border-retro-electric-blue'
-                              : 'bg-transparent text-retro-electric-blue border-retro-electric-blue hover:bg-retro-electric-blue hover:text-black'
+                              ? 'bg-gradient-to-r from-retro-electric-blue to-retro-electric-blue/80 text-white border-retro-electric-blue shadow-lg shadow-retro-electric-blue/30'
+                              : 'bg-gray-800/60 text-retro-electric-blue border-retro-electric-blue/50 hover:bg-gradient-to-r hover:from-retro-electric-blue/20 hover:to-retro-electric-blue/10 hover:border-retro-electric-blue hover:shadow-md hover:shadow-retro-electric-blue/20'
                           }`}
+                          title={userVotes.confessions[post.id]?.upvoted ? "Remove upvote" : "Upvote this confession"}
                         >
-                          👍 {post.upvotes}
+                          <span className="text-sm transform group-hover:scale-110 transition-transform">👍</span>
+                          <span className="font-pixel">{post.upvotes}</span>
+                          {userVotes.confessions[post.id]?.upvoted && (
+                            <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
+                          )}
                         </button>
+                        
                         <button
                           onClick={() => handleVote(post.id, 'down')}
-                          className={`flex items-center gap-1 px-2 py-1 border transition-all ${
+                          className={`group flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all duration-300 font-cyber text-xs flex-shrink-0 ${
                             userVotes.confessions[post.id]?.downvoted
-                              ? 'bg-retro-hot-pink text-black border-retro-hot-pink'
-                              : 'bg-transparent text-retro-hot-pink border-retro-hot-pink hover:bg-retro-hot-pink hover:text-black'
+                              ? 'bg-gradient-to-r from-retro-hot-pink to-retro-hot-pink/80 text-white border-retro-hot-pink shadow-lg shadow-retro-hot-pink/30'
+                              : 'bg-gray-800/60 text-retro-hot-pink border-retro-hot-pink/50 hover:bg-gradient-to-r hover:from-retro-hot-pink/20 hover:to-retro-hot-pink/10 hover:border-retro-hot-pink hover:shadow-md hover:shadow-retro-hot-pink/20'
                           }`}
+                          title={userVotes.confessions[post.id]?.downvoted ? "Remove downvote" : "Downvote this confession"}
                         >
-                          👎 {post.downvotes}
+                          <span className="text-sm transform group-hover:scale-110 transition-transform">👎</span>
+                          <span className="font-pixel">{post.downvotes}</span>
+                          {userVotes.confessions[post.id]?.downvoted && (
+                            <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
+                          )}
                         </button>
                       </div>
-                      <button
-                        onClick={() => toggleComments(post.id)}
-                        className="flex items-center gap-1 px-2 py-1 border border-retro-neon-green text-retro-neon-green hover:bg-retro-neon-green hover:text-black transition-all"
-                      >
-                        💬 {post.comments.length} {post.comments.length === 1 ? 'Reply' : 'Replies'}
-                      </button>
-                      <button
-                        onClick={() => handleReport(post.id)}
-                        className="flex items-center gap-1 px-2 py-1 border border-retro-hot-pink/50 text-retro-hot-pink hover:bg-retro-hot-pink hover:text-black transition-all"
-                        title="Report inappropriate content"
-                      >
-                        <Flag className="w-3 h-3" />
-                        Report
-                      </button>
+                      
+                      {/* Comment and Report Buttons Row */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          onClick={() => toggleComments(post.id)}
+                          className="group flex items-center gap-1.5 px-3 py-2 rounded-xl border border-retro-neon-green/50 text-retro-neon-green bg-gray-800/60 hover:bg-gradient-to-r hover:from-retro-neon-green/20 hover:to-retro-neon-green/10 hover:border-retro-neon-green hover:shadow-md hover:shadow-retro-neon-green/20 transition-all duration-300 font-cyber text-xs flex-shrink-0"
+                          title={post.showComments ? "Hide comments" : "Show comments"}
+                        >
+                          <span className="text-sm transform group-hover:scale-110 transition-transform">💬</span>
+                          <span className="font-pixel hidden xs:inline">
+                            {post.comments.length} {post.comments.length === 1 ? 'Reply' : 'Replies'}
+                          </span>
+                          <span className="font-pixel xs:hidden">
+                            {post.comments.length}
+                          </span>
+                          {post.showComments && (
+                            <div className="w-1 h-1 bg-retro-neon-green rounded-full animate-pulse"></div>
+                          )}
+                        </button>
+                        
+                        <button
+                          onClick={() => handleReport(post.id)}
+                          className="group flex items-center gap-1.5 px-3 py-2 rounded-xl border border-retro-hot-pink/40 text-retro-hot-pink/70 bg-gray-800/60 hover:bg-gradient-to-r hover:from-retro-hot-pink/20 hover:to-retro-hot-pink/10 hover:border-retro-hot-pink hover:text-retro-hot-pink hover:shadow-md hover:shadow-retro-hot-pink/20 transition-all duration-300 font-cyber text-xs flex-shrink-0"
+                          title="Report inappropriate content"
+                        >
+                          <Flag className="w-3 h-3 transform group-hover:scale-110 transition-transform" />
+                          <span className="font-pixel hidden xs:inline">Report</span>
+                        </button>
+                      </div>
                     </div>
-                    <span className="text-retro-cyber-yellow font-pixel text-xs">
-                      {new Date(post.created_at).toLocaleString()} • Expires in {Math.max(0, 24 - Math.floor((Date.now() - new Date(post.created_at).getTime()) / (1000 * 60 * 60)))}h
-                    </span>
+                    
+                    {/* Timestamp - Always on separate row on mobile */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-gray-700/20">
+                      <div className="w-1 h-1 bg-retro-cyber-yellow rounded-full animate-pulse"></div>
+                      <span className="text-retro-cyber-yellow/80 font-pixel text-xs">
+                        {new Date(post.created_at).toLocaleString()} • Expires in {Math.max(0, 24 - Math.floor((Date.now() - new Date(post.created_at).getTime()) / (1000 * 60 * 60)))}h
+                      </span>
+                    </div>
                   </div>
                   
                   {/* Emoji Reactions */}
-                  <EmojiReactions 
-                    targetId={post.id} 
-                    targetType="confession" 
-                    className="mt-3"
-                  />
+                  <div className="mt-3 relative overflow-visible">
+                    <EmojiReactions 
+                      targetId={post.id} 
+                      targetType="confession" 
+                    />
+                  </div>
                   
                   {/* Comments Section */}
                   {post.showComments && (
-                    <div className="mt-4 border-t border-retro-neon-green/30 pt-4">
+                    <div className="mt-6 border-t border-retro-neon-green/30 pt-6 bg-gradient-to-r from-gray-900/20 to-gray-800/20 rounded-2xl p-4 -mx-4">
                       {/* Add Comment Form */}
                       <div className="mb-4">
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                           <textarea
                             id={`comment-${post.id}`}
                             placeholder="Add an anonymous reply..."
-                            className="flex-1 bg-gray-900/50 border border-retro-electric-blue/30 rounded p-2 text-retro-neon-green font-cyber text-sm resize-none"
+                            className="flex-1 bg-gray-900/50 border border-retro-electric-blue/30 rounded-2xl p-3 text-retro-neon-green font-cyber text-sm resize-none focus:border-retro-cyber-yellow focus:outline-none focus:ring-1 focus:ring-retro-cyber-yellow transition-all min-h-[80px] sm:min-h-[60px]"
                             rows={2}
                             onKeyDown={async (e) => {
                               if (e.key === 'Enter' && !e.shiftKey) {
@@ -459,12 +553,13 @@ const Index = () => {
                                 }
                               }
                             }}
-                            className="px-3 py-2 bg-retro-neon-green text-black font-pixel text-xs hover:bg-retro-cyber-yellow transition-all"
+                            className="group px-4 py-2 bg-gradient-to-r from-retro-neon-green to-retro-neon-green/80 text-black font-pixel text-xs hover:from-retro-cyber-yellow hover:to-retro-cyber-yellow/80 hover:scale-105 hover:shadow-lg hover:shadow-retro-neon-green/30 transition-all duration-300 rounded-2xl border border-retro-neon-green/50 flex-shrink-0 self-start sm:self-center"
+                            title="Post your anonymous reply"
                           >
-                            Reply
+                            <span className="transform group-hover:scale-110 transition-transform">Reply</span>
                           </button>
                         </div>
-                        <p className="text-xs text-retro-electric-blue/70 mt-1 font-cyber">
+                        <p className="text-xs text-retro-electric-blue/70 mt-2 font-cyber">
                           Press Enter to post • Anonymous replies only
                         </p>
                       </div>
@@ -473,7 +568,8 @@ const Index = () => {
                       {post.comments.length > 0 && (
                         <div className="space-y-3">
                           {post.comments.map((comment) => (
-                            <div key={comment.id} className="bg-gray-900/30 border border-retro-electric-blue/20 rounded p-3">
+                            <div key={comment.id} className="bg-gray-900/30 border border-retro-electric-blue/20 rounded-2xl p-4"
+                            >
                               <p className="font-cyber text-sm text-retro-neon-green mb-2">
                                 {comment.content}
                               </p>
@@ -485,22 +581,38 @@ const Index = () => {
                                 className="mb-2"
                               />
                               
-                              <div className="flex justify-between items-center text-xs">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-retro-electric-blue">👍 {comment.upvotes}</span>
-                                  <span className="text-retro-hot-pink">👎 {comment.downvotes}</span>
+                              <div className="flex flex-col sm:flex-row sm:justify-between gap-3 text-xs pt-3 border-t border-gray-700/20">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {/* Comment Vote Buttons */}
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1 px-2 py-1 bg-retro-electric-blue/10 rounded-xl border border-retro-electric-blue/30 flex-shrink-0">
+                                      <span className="text-sm">👍</span>
+                                      <span className="text-retro-electric-blue font-pixel text-xs">{comment.upvotes}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1 px-2 py-1 bg-retro-hot-pink/10 rounded-xl border border-retro-hot-pink/30 flex-shrink-0">
+                                      <span className="text-sm">👎</span>
+                                      <span className="text-retro-hot-pink font-pixel text-xs">{comment.downvotes}</span>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Comment Report Button */}
                                   <button
                                     onClick={() => handleReport(comment.id, true)}
-                                    className="flex items-center gap-1 px-1 py-0.5 text-retro-hot-pink/70 hover:text-retro-hot-pink transition-all"
-                                    title="Report comment"
+                                    className="group flex items-center gap-1 px-2 py-1 rounded-xl border border-retro-hot-pink/30 text-retro-hot-pink/70 bg-gray-800/40 hover:bg-retro-hot-pink/10 hover:border-retro-hot-pink/50 hover:text-retro-hot-pink transition-all duration-300 flex-shrink-0"
+                                    title="Report inappropriate comment"
                                   >
-                                    <Flag className="w-2.5 h-2.5" />
-                                    <span className="font-cyber text-xs">report</span>
+                                    <Flag className="w-3 h-3 transform group-hover:scale-110 transition-transform" />
+                                    <span className="font-cyber text-xs hidden xs:inline">Report</span>
                                   </button>
                                 </div>
-                                <span className="text-retro-cyber-yellow/70 font-pixel">
-                                  {new Date(comment.created_at).toLocaleString()}
-                                </span>
+                                
+                                {/* Comment Timestamp */}
+                                <div className="flex items-center gap-1 pt-2 sm:pt-0">
+                                  <div className="w-1 h-1 bg-retro-cyber-yellow/50 rounded-full"></div>
+                                  <span className="text-retro-cyber-yellow/70 font-pixel text-xs">
+                                    {new Date(comment.created_at).toLocaleString()}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           ))}
