@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Tag, X } from 'lucide-react';
+import { Tag, X, Mic, Image, Video } from 'lucide-react';
 import AudioRecorder from './AudioRecorder';
 import VideoRecorder from './VideoRecorder';
 import ImageUploader from './ImageUploader';
@@ -36,6 +36,11 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
   // Image upload state
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageContext, setImageContext] = useState<string>('');
+
+  // Media section visibility states
+  const [showAudioSection, setShowAudioSection] = useState(false);
+  const [showVideoSection, setShowVideoSection] = useState(false);
+  const [showImageSection, setShowImageSection] = useState(false);
 
   const addTag = () => {
     const trimmedTag = currentTag.trim().toLowerCase();
@@ -82,6 +87,10 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
       setVideoContext('');
       setImageUrl(null);
       setImageContext('');
+      // Close all media sections
+      setShowAudioSection(false);
+      setShowVideoSection(false);
+      setShowImageSection(false);
     } catch (error) {
       console.error('Error submitting confession:', error);
     } finally {
@@ -214,35 +223,97 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
           </div>
         </div>
         
-        {/* Media Upload Section */}
+        {/* Media Upload Section - Icon Toggles */}
         <div className="space-y-4">
-          {/* Audio controls */}
-          <AudioRecorder 
-            audioUrl={audioUrl} 
-            setAudioUrl={setAudioUrl}
-            setAudioBlob={setAudioBlob}
-            handleFileUpload={handleFileUpload}
-            isUploading={isUploading}
-          />
+          {/* Media Type Icons - Always Visible */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="font-cyber text-sm text-retro-cyber-yellow mr-2">Add media:</span>
+            
+            {/* Audio Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setShowAudioSection(!showAudioSection)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300 ${
+                showAudioSection || audioUrl
+                  ? 'bg-gradient-to-r from-retro-electric-blue/30 to-retro-neon-green/30 border-retro-neon-green text-retro-neon-green shadow-lg shadow-retro-neon-green/20'
+                  : 'bg-gray-800/50 border-retro-electric-blue/30 text-retro-electric-blue/70 hover:border-retro-electric-blue hover:bg-retro-electric-blue/10'
+              }`}
+              title="Add audio"
+            >
+              <Mic className="w-4 h-4" />
+              <span className="font-cyber text-xs">Audio</span>
+            </button>
 
-          {/* Video controls */}
-          <VideoRecorder 
-            videoUrl={videoUrl}
-            setVideoUrl={setVideoUrl}
-            setVideoBlob={setVideoBlob}
-            handleFileUpload={handleFileUpload}
-            videoContext={videoContext}
-            setVideoContext={setVideoContext}
-          />
+            {/* Video Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setShowVideoSection(!showVideoSection)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300 ${
+                showVideoSection || videoUrl
+                  ? 'bg-gradient-to-r from-retro-hot-pink/30 to-retro-cyber-yellow/30 border-retro-hot-pink text-retro-hot-pink shadow-lg shadow-retro-hot-pink/20'
+                  : 'bg-gray-800/50 border-retro-hot-pink/30 text-retro-hot-pink/70 hover:border-retro-hot-pink hover:bg-retro-hot-pink/10'
+              }`}
+              title="Add video"
+            >
+              <Video className="w-4 h-4" />
+              <span className="font-cyber text-xs">Video</span>
+            </button>
 
-          {/* Image upload */}
-          <ImageUploader 
-            imageUrl={imageUrl}
-            setImageUrl={setImageUrl}
-            handleFileUpload={handleFileUpload}
-            imageContext={imageContext}
-            setImageContext={setImageContext}
-          />
+            {/* Image Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setShowImageSection(!showImageSection)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300 ${
+                showImageSection || imageUrl
+                  ? 'bg-gradient-to-r from-retro-cyber-yellow/30 to-retro-electric-blue/30 border-retro-cyber-yellow text-retro-cyber-yellow shadow-lg shadow-retro-cyber-yellow/20'
+                  : 'bg-gray-800/50 border-retro-cyber-yellow/30 text-retro-cyber-yellow/70 hover:border-retro-cyber-yellow hover:bg-retro-cyber-yellow/10'
+              }`}
+              title="Add image"
+            >
+              <Image className="w-4 h-4" />
+              <span className="font-cyber text-xs">Image</span>
+            </button>
+          </div>
+
+          {/* Collapsible Audio Section */}
+          {showAudioSection && (
+            <div className="animate-accordion-down">
+              <AudioRecorder 
+                audioUrl={audioUrl} 
+                setAudioUrl={setAudioUrl}
+                setAudioBlob={setAudioBlob}
+                handleFileUpload={handleFileUpload}
+                isUploading={isUploading}
+              />
+            </div>
+          )}
+
+          {/* Collapsible Video Section */}
+          {showVideoSection && (
+            <div className="animate-accordion-down">
+              <VideoRecorder 
+                videoUrl={videoUrl}
+                setVideoUrl={setVideoUrl}
+                setVideoBlob={setVideoBlob}
+                handleFileUpload={handleFileUpload}
+                videoContext={videoContext}
+                setVideoContext={setVideoContext}
+              />
+            </div>
+          )}
+
+          {/* Collapsible Image Section */}
+          {showImageSection && (
+            <div className="animate-accordion-down">
+              <ImageUploader 
+                imageUrl={imageUrl}
+                setImageUrl={setImageUrl}
+                handleFileUpload={handleFileUpload}
+                imageContext={imageContext}
+                setImageContext={setImageContext}
+              />
+            </div>
+          )}
         </div>
         
         <div className="flex justify-between items-center">
