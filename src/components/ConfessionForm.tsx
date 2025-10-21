@@ -63,15 +63,15 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newConfession.trim() && !audioUrl && !videoUrl && !imageUrl) return;
+    if (!newConfession.trim() && !imageUrl) return;
 
     setIsSubmitting(true);
     try {
       await onSubmit({
         content: newConfession,
-        audioUrl: audioUrl || undefined,
-        videoUrl: videoUrl || undefined,
-        videoContext: videoContext || undefined,
+        // audioUrl: audioUrl || undefined, // Disabled for now
+        // videoUrl: videoUrl || undefined, // Disabled for now
+        // videoContext: videoContext || undefined, // Disabled for now
         imageUrl: imageUrl || undefined,
         imageContext: imageContext || undefined,
         tags: tags
@@ -229,34 +229,32 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
           <div className="flex items-center gap-3 flex-wrap">
             <span className="font-cyber text-sm text-retro-cyber-yellow mr-2">Add media:</span>
             
-            {/* Audio Toggle Button */}
+            {/* Audio Toggle Button - Disabled (Coming Soon) */}
             <button
               type="button"
-              onClick={() => setShowAudioSection(!showAudioSection)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300 ${
-                showAudioSection || audioUrl
-                  ? 'bg-gradient-to-r from-retro-electric-blue/30 to-retro-neon-green/30 border-retro-neon-green text-retro-neon-green shadow-lg shadow-retro-neon-green/20'
-                  : 'bg-gray-800/50 border-retro-electric-blue/30 text-retro-electric-blue/70 hover:border-retro-electric-blue hover:bg-retro-electric-blue/10'
-              }`}
-              title="Add audio"
+              disabled
+              className="relative flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300 bg-gray-800/30 border-retro-electric-blue/20 text-retro-electric-blue/40 cursor-not-allowed opacity-60"
+              title="Audio uploads coming soon!"
             >
               <Mic className="w-4 h-4" />
               <span className="font-cyber text-xs">Audio</span>
+              <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-retro-cyber-yellow text-black font-pixel text-[8px] rounded-full animate-pulse">
+                SOON
+              </span>
             </button>
 
-            {/* Video Toggle Button */}
+            {/* Video Toggle Button - Disabled (Coming Soon) */}
             <button
               type="button"
-              onClick={() => setShowVideoSection(!showVideoSection)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300 ${
-                showVideoSection || videoUrl
-                  ? 'bg-gradient-to-r from-retro-hot-pink/30 to-retro-cyber-yellow/30 border-retro-hot-pink text-retro-hot-pink shadow-lg shadow-retro-hot-pink/20'
-                  : 'bg-gray-800/50 border-retro-hot-pink/30 text-retro-hot-pink/70 hover:border-retro-hot-pink hover:bg-retro-hot-pink/10'
-              }`}
-              title="Add video"
+              disabled
+              className="relative flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300 bg-gray-800/30 border-retro-hot-pink/20 text-retro-hot-pink/40 cursor-not-allowed opacity-60"
+              title="Video uploads coming soon!"
             >
               <Video className="w-4 h-4" />
               <span className="font-cyber text-xs">Video</span>
+              <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-retro-cyber-yellow text-black font-pixel text-[8px] rounded-full animate-pulse">
+                SOON
+              </span>
             </button>
 
             {/* Image Toggle Button */}
@@ -275,32 +273,11 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
             </button>
           </div>
 
-          {/* Collapsible Audio Section */}
-          {showAudioSection && (
-            <div className="animate-accordion-down">
-              <AudioRecorder 
-                audioUrl={audioUrl} 
-                setAudioUrl={setAudioUrl}
-                setAudioBlob={setAudioBlob}
-                handleFileUpload={handleFileUpload}
-                isUploading={isUploading}
-              />
-            </div>
-          )}
+          {/* Audio Section - Disabled for now */}
+          {/* Coming Soon Feature */}
 
-          {/* Collapsible Video Section */}
-          {showVideoSection && (
-            <div className="animate-accordion-down">
-              <VideoRecorder 
-                videoUrl={videoUrl}
-                setVideoUrl={setVideoUrl}
-                setVideoBlob={setVideoBlob}
-                handleFileUpload={handleFileUpload}
-                videoContext={videoContext}
-                setVideoContext={setVideoContext}
-              />
-            </div>
-          )}
+          {/* Video Section - Disabled for now */}
+          {/* Coming Soon Feature */}
 
           {/* Collapsible Image Section */}
           {showImageSection && (

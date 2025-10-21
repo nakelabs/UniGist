@@ -48,7 +48,7 @@ const PageFooter = () => {
               <span className="text-center">and early 2000s nostalgia</span>
             </div>
             <div className="mt-2 text-xs text-gray-400 font-cyber px-2 sm:px-0">
-              © 2025 Ghost Board • No logs, no traces, no worries
+              © 2025 nakelabs • No logs, no traces, no worries
             </div>
           </div>
           
