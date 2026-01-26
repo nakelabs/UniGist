@@ -59,14 +59,7 @@ Start development server
 Access the application
 Main app: http://localhost:8082
 Admin panel: http://localhost:8082/admin-secure-access-2025
-🗄️ Database Setup
-Run these SQL scripts in your Supabase SQL Editor in order:
 
-1. Core Tables
-2. Storage Setup
-3. Vote Policies
-4. Reactions System
-5. Admin Functions
 📁 Project Structure
 🎮 Usage
 For Users
@@ -86,9 +79,6 @@ Sort: By newest, most liked, or controversial
 Search: Find specific confessions with keywords
 Filter: Browse by content type or engagement level
 For Administrators
-Admin Panel Access
-URL: /admin-secure-access-2025
-Password: ghost2025!admin
 Session: 24-hour automatic logout
 Dashboard Features
 Live Statistics: Real-time counts and metrics
@@ -153,11 +143,6 @@ Open a Pull Request
 📄 License
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-🙏 Acknowledgments
-Supabase for the excellent backend-as-a-service platform
-Tailwind CSS for the utility-first CSS framework
-Lucide for the beautiful icon set
-React Hot Toast for elegant notifications
 📞 Support
 For support, please open an issue on GitHub or contact the development team.
 
