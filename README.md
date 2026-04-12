@@ -1,28 +1,24 @@
  Ghost Board - Anonymous Confessions Club
 A cyberpunk-themed anonymous confession board built with React, TypeScript, and Supabase. Share your thoughts, vote on confessions, react with emojis, and engage with the community anonymously.
 
-<img alt="License" src="https://img.shields.io/badge/license-MIT-blue.svg">
-<img alt="React" src="https://img.shields.io/badge/React-18.x-blue.svg">
-<img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.x-blue.svg">
-<img alt="Supabase" src="https://img.shields.io/badge/Supabase-2.x-green.svg">
-✨ Features
-🎯 Core Functionality
+ Features
+ Core Functionality
 Anonymous Confessions - Share thoughts without identity
 Multi-Media Support - Text, images, audio recordings, and video uploads
 Real-time Feed - Live updates with new confessions and interactions
 Comments System - Engage with confessions through replies
 Search & Filter - Find specific content with powerful search
-🗳️ Engagement System
+  Engagement System
 Voting - Upvote and downvote confessions and comments
-Emoji Reactions - React with 16 different emojis (😂 😭 😱 🔥 💯 ❤️ 👏 😍 🤔 😬 🤯 👀 💀 🙄 😤 🥺)
+Emoji Reactions - React with 16 different emojis ()
 Sorting Options - Sort by newest, most liked, or most controversial
 User Fingerprinting - Prevent duplicate votes while maintaining anonymity
-📊 Content Moderation
+    Content Moderation
 Advanced Reporting - 9 predefined report categories + custom reasons
 Admin Dashboard - Comprehensive moderation tools
 Content Management - Delete individual posts or bulk cleanup
 User Analytics - Track engagement and activity metrics
-🎨 Design & UX
+ Design & UX
 Cyberpunk Aesthetic - Retro-futuristic neon design
 Responsive Design - Works seamlessly on mobile and desktop
 Dark Theme - Easy on the eyes with neon accents
@@ -39,29 +35,13 @@ Supabase for database, authentication, and file storage
 PostgreSQL with Row Level Security (RLS)
 Real-time subscriptions for live updates
 File upload with 50MB limit support
-Key Libraries
-@supabase/supabase-js - Database client
-react-hot-toast - Notifications
-Canvas Confetti - Celebration effects
-🚀 Getting Started
-Prerequisites
-Node.js 18+ and npm
-Supabase account and project
-Installation
-Clone the repository
-Install dependencies
-Set up Supabase
-Create a new Supabase project
-Copy your project URL and anon key
-Run the database setup scripts (see Database Setup section)
-Configure environment variables
-Start development server
-Access the application
+
+
 Main app: http://localhost:8082
 Admin panel: http://localhost:8082/admin-secure-access-2025
 
-📁 Project Structure
-🎮 Usage
+  Project Structure
+  Usage
 For Users
 Posting Confessions
 Click "Share Your Confession"
@@ -95,15 +75,7 @@ Individual Deletion: Remove specific confessions/comments
 Bulk Cleanup: Remove old content (7+ days)
 Nuclear Option: Complete database wipe (with double confirmation)
 Report Management: Dismiss, resolve, or act on reports
-🔧 Configuration
-Environment Variables
-Customization Options
-File Upload Limits: Modify in fileUpload.ts (default: 50MB)
-Available Emojis: Update in useReactions.ts
-Report Categories: Modify in ReportModal.tsx
-Admin Password: Change in AdminSecure.tsx
-Styling: Customize colors in Tailwind config
-🛡️ Security Features
+  Security Features
 Data Protection
 Row Level Security (RLS) on all database tables
 Anonymous user tracking via browser fingerprinting
@@ -128,11 +100,6 @@ Touch-friendly interactions for mobile devices
 Optimized emoji picker for small screens
 Mobile-first design approach
 🚀 Deployment
-Build for Production
-Deploy to Vercel
-Deploy to Netlify
-Environment Variables
-Ensure all environment variables are set in your deployment platform.
 
 🤝 Contributing
 Fork the repository
@@ -140,12 +107,12 @@ Create a feature branch (git checkout -b feature/amazing-feature)
 Commit your changes (git commit -m 'Add amazing feature')
 Push to the branch (git push origin feature/amazing-feature)
 Open a Pull Request
-📄 License
+  License
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-📞 Support
-For support, please open an issue on GitHub or contact the development team.
+ Support
+For support, please open an issue on GitHub or contact ME
 
-Built with ❤️ and lots of ☕ by the Ghost Board team
+Built with ❤️ and lots of ☕ by NAKELABS
 
 Share your thoughts, stay anonymous, stay authentic.
