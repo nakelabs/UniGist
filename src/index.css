@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -5,35 +6,35 @@
 
 @layer base {
   :root {
-    --background: 0 0% 5%;
-    --foreground: 120 100% 80%;
+    --background: 0 0% 8%;
+    --foreground: 0 0% 98%;
 
-    --card: 280 100% 10%;
-    --card-foreground: 120 100% 90%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 280 100% 8%;
-    --popover-foreground: 120 100% 90%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 280 100% 50%;
-    --primary-foreground: 0 0% 0%;
+    --primary: 345 100% 58%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 120 100% 50%;
-    --secondary-foreground: 0 0% 0%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 280 50% 20%;
-    --muted-foreground: 120 50% 70%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 55%;
 
-    --accent: 60 100% 50%;
-    --accent-foreground: 0 0% 0%;
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 280 100% 30%;
-    --input: 280 100% 20%;
-    --ring: 120 100% 50%;
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 345 100% 58%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -52,128 +53,112 @@
   }
 
   body {
-    @apply bg-background text-foreground font-cyber;
-    background-image: 
-      radial-gradient(circle at 20% 20%, rgba(0, 255, 0, 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(255, 20, 147, 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 40% 60%, rgba(138, 43, 226, 0.1) 0%, transparent 50%);
-    min-height: 100vh;
+    @apply bg-background text-foreground font-sans antialiased;
+    background-color: #111111;
+    color: #f5f5f5;
+  }
+
+  ::selection {
+    background: rgba(255, 45, 85, 0.3);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #555;
   }
 }
 
 @layer components {
-  .retro-button {
-    @apply bg-gradient-to-r from-retro-hot-pink to-retro-neon-purple text-white font-pixel text-xs px-4 py-2 border-2 border-retro-neon-green transform transition-all duration-200 hover:scale-105 hover:rotate-1 active:scale-95;
-    box-shadow: 3px 3px 0px theme('colors.retro.cyber-yellow'), inset 0 0 10px rgba(255, 255, 255, 0.2);
-  }
-  
-  .retro-button:hover {
-    box-shadow: 5px 5px 0px theme('colors.retro.cyber-yellow'), inset 0 0 15px rgba(255, 255, 255, 0.3);
+  /* ── Cards ─────────────────────────────────── */
+  .post-card {
+    @apply bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl overflow-hidden
+           transition-all duration-300;
   }
 
-  .retro-card {
-    @apply bg-gradient-to-br from-purple-900/90 to-blue-900/90 border-2 border-retro-neon-green p-4 rounded-none;
-    box-shadow: 
-      0 0 20px theme('colors.retro.neon-green'),
-      inset 0 0 20px rgba(0, 255, 0, 0.1);
+  /* ── Action buttons (like, comment etc.) ───── */
+  .action-btn {
+    @apply flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium
+           text-[#888] transition-all duration-200
+           hover:bg-white/5 hover:text-white active:scale-95;
   }
 
-  .retro-input {
-    @apply bg-black border-2 border-retro-electric-blue text-retro-neon-green font-cyber p-3 rounded-none;
-    box-shadow: inset 0 0 10px rgba(0, 128, 255, 0.3);
+  .action-btn.active {
+    @apply text-[#ff2d55];
   }
 
-  .retro-input:focus {
-    @apply outline-none border-retro-cyber-yellow;
-    box-shadow: 
-      inset 0 0 10px rgba(255, 255, 0, 0.3),
-      0 0 15px theme('colors.retro.cyber-yellow');
+  /* ── Pill tags ──────────────────────────────── */
+  .tag-pill {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    background: rgba(255,255,255,0.06);
+    color: #aaa;
+    border: 1px solid rgba(255,255,255,0.1);
   }
 
-  .glitch-text {
-    position: relative;
+  /* ── Sort tab buttons ───────────────────────── */
+  .sort-tab {
+    @apply px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200;
+    color: #777;
   }
 
-  .glitch-text::before,
-  .glitch-text::after {
-    content: attr(data-text);
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+  .sort-tab:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.08);
   }
 
-  .glitch-text::before {
-    animation: glitch-1 2s infinite;
-    color: theme('colors.retro.hot-pink');
-    z-index: -1;
+  .sort-tab.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
   }
 
-  .glitch-text::after {
-    animation: glitch-2 2s infinite;
-    color: theme('colors.retro.electric-blue');
-    z-index: -2;
+  /* ── Gradient brand button ──────────────────── */
+  .btn-brand {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl
+           font-semibold text-sm text-white transition-all duration-200
+           active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none;
+    background: linear-gradient(135deg, #ff2d55, #7c3aed);
   }
 
-  @keyframes glitch-1 {
-    0%, 14%, 15%, 49%, 50%, 99%, 100% {
-      transform: translate(0, 0);
-    }
-    15%, 49% {
-      transform: translate(-1px, 0);
-    }
+  .btn-brand:hover {
+    opacity: 0.9;
+    box-shadow: 0 0 24px rgba(255, 45, 85, 0.3);
   }
 
-  @keyframes glitch-2 {
-    0%, 20%, 21%, 62%, 63%, 99%, 100% {
-      transform: translate(0, 0);
-    }
-    21%, 62% {
-      transform: translate(1px, 0);
-    }
+  /* ── Ghost button ───────────────────────────── */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl
+           text-sm font-medium text-[#888] border border-[#2a2a2a]
+           hover:border-[#444] hover:text-white bg-transparent
+           transition-all duration-200 active:scale-95;
   }
 
-  .retro-checkbox {
-    @apply appearance-none w-4 h-4 border-2 border-retro-neon-green bg-black relative cursor-pointer;
+  /* ── Textarea / input ───────────────────────── */
+  .field {
+    @apply w-full bg-[#1e1e1e] border border-[#2a2a2a] rounded-xl px-4 py-3
+           text-[15px] text-white placeholder-[#555]
+           focus:outline-none focus:border-[#ff2d55]/60 focus:ring-1 focus:ring-[#ff2d55]/30
+           transition-all duration-200 resize-none;
   }
 
-  .retro-checkbox:checked {
-    @apply bg-retro-cyber-yellow border-retro-cyber-yellow;
+  /* ── Divider ────────────────────────────────── */
+  .divider {
+    @apply border-t border-[#2a2a2a];
   }
 
-  .retro-checkbox:checked::after {
-    content: '✓';
-    @apply absolute top-0 left-0 w-full h-full flex items-center justify-center text-black text-xs font-bold;
-  }
-
-  .retro-radio {
-    @apply appearance-none w-4 h-4 border-2 border-retro-neon-green bg-black rounded-full relative cursor-pointer;
-  }
-
-  .retro-radio:checked {
-    @apply bg-retro-cyber-yellow border-retro-cyber-yellow;
-  }
-
-  .retro-radio:checked::after {
-    content: '';
-    @apply absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-black rounded-full;
-  }
-
-  @keyframes glow {
-    0%, 100% {
-      text-shadow: 0 0 5px theme('colors.retro.neon-green'),
-                   0 0 10px theme('colors.retro.neon-green'),
-                   0 0 15px theme('colors.retro.neon-green');
-    }
-    50% {
-      text-shadow: 0 0 10px theme('colors.retro.neon-green'),
-                   0 0 20px theme('colors.retro.neon-green'),
-                   0 0 30px theme('colors.retro.neon-green');
-    }
-  }
-
-  .animate-glow {
-    animation: glow 2s ease-in-out infinite;
+  /* ── Shimmer skeleton ───────────────────────── */
+  .skeleton {
+    @apply rounded-lg;
+    background: linear-gradient(90deg, #1e1e1e 25%, #2a2a2a 50%, #1e1e1e 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s linear infinite;
   }
 }

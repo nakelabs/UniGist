@@ -1,20 +1,29 @@
-
-import React from 'react';
-
 const PageHeader = () => {
   return (
-    <header className="text-center mb-12 relative">
-      <h1 
-        className="glitch-text font-pixel text-4xl md:text-6xl text-retro-neon-green mb-4 animate-glow"
-        data-text="UniGist"
-      >
-        UniGist
-      </h1>
-      <p className="font-cyber text-lg md:text-xl text-retro-hot-pink animate-blink">
-        Your secrets, your voice, your drama. 💫
-      </p>
-      <div className="mt-4 font-pixel text-xs text-retro-cyber-yellow">
-        ★ ANONYMOUS ★ CHAOTIC ★ LEGENDARY ★
+    <header className="sticky top-0 z-50 bg-[#111111]/95 backdrop-blur-xl border-b border-[#1e1e1e]">
+      <div className="max-w-[680px] mx-auto px-4 h-14 flex items-center justify-between">
+        {/* Wordmark */}
+        <div className="flex items-center gap-2">
+          <span
+            className="text-xl font-bold tracking-tight"
+            style={{
+              background: 'linear-gradient(135deg, #ff2d55, #7c3aed)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            UniGist
+          </span>
+          <span className="text-[10px] font-semibold text-[#555] uppercase tracking-widest mt-0.5">
+            anonymous
+          </span>
+        </div>
+
+        {/* Ghost badge */}
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1e1e1e] border border-[#2a2a2a]">
+          <span className="text-sm">👻</span>
+          <span className="text-xs font-medium text-[#777]">24h feed</span>
+        </div>
       </div>
     </header>
   );

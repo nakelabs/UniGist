@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
 export interface ReactionCounts {
@@ -14,147 +14,115 @@ interface UserReactions {
 export const useReactions = () => {
   const [userReactions, setUserReactions] = useState<UserReactions>({
     confessions: {},
-    comments: {}
+    comments: {},
   });
-  
+
   const { toast } = useToast();
 
-  // Available emojis for reactions
-  const availableEmojis = ['😂', '😭', '😱', '🔥', '💯', '❤️', '👏', '😍', '🤔', '😬', '🤯', '👀', '💀', '🙄', '😤', '🥺'];
+  const availableEmojis = [
+    '😂', '😭', '😱', '🔥', '💯', '❤️', '👏',
+    '😍', '🤔', '😬', '🤯', '👀', '💀', '🙄', '😤', '🥺',
+  ];
 
-  // Get user fingerprint for anonymous tracking
+  // ── Fingerprint ────────────────────────────────────────────────────────────
   const getUserFingerprint = () => {
-    const fingerprint = localStorage.getItem('user_fingerprint');
-    if (fingerprint) {
-      return fingerprint;
-    }
-    
-    // Create a simple fingerprint based on browser characteristics
+    const stored = localStorage.getItem('user_fingerprint');
+    if (stored) return stored;
+
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     ctx!.textBaseline = 'top';
     ctx!.font = '14px Arial';
     ctx!.fillText('Browser fingerprint', 2, 2);
-    
-    const newFingerprint = canvas.toDataURL() + navigator.userAgent + screen.width + screen.height;
-    const hash = btoa(newFingerprint).slice(0, 16);
-    
+
+    const raw = canvas.toDataURL() + navigator.userAgent + screen.width + screen.height;
+    const hash = btoa(raw).slice(0, 16);
     localStorage.setItem('user_fingerprint', hash);
     return hash;
   };
 
-  // Load user reactions from localStorage
+  // ── Local persistence ──────────────────────────────────────────────────────
   const loadUserReactions = () => {
     const saved = localStorage.getItem('user_reactions');
-    if (saved) {
-      setUserReactions(JSON.parse(saved));
-    }
+    if (saved) setUserReactions(JSON.parse(saved));
   };
 
-  // Save user reactions to localStorage
   const saveUserReactions = (reactions: UserReactions) => {
     localStorage.setItem('user_reactions', JSON.stringify(reactions));
     setUserReactions(reactions);
   };
 
-  // Toggle reaction
-  const toggleReaction = async (targetId: string, emoji: string, targetType: 'confession' | 'comment'): Promise<boolean> => {
+  // ── Toggle a reaction ──────────────────────────────────────────────────────
+  const toggleReaction = async (
+    targetId: string,
+    emoji: string,
+    targetType: 'confession' | 'comment'
+  ): Promise<boolean> => {
     try {
       const fingerprint = getUserFingerprint();
       const reactionsKey = targetType === 'confession' ? 'confessions' : 'comments';
-      const currentReactions = userReactions[reactionsKey][targetId] || [];
-      
-      let newReactions: string[];
-      let action: 'add' | 'remove';
+      const current = userReactions[reactionsKey][targetId] ?? [];
 
-      if (currentReactions.includes(emoji)) {
-        // Remove reaction
-        newReactions = currentReactions.filter(e => e !== emoji);
-        action = 'remove';
-      } else {
-        // Add reaction
-        newReactions = [...currentReactions, emoji];
-        action = 'add';
-      }
+      const isAdding = !current.includes(emoji);
+      const newReactions = isAdding
+        ? [...current, emoji]
+        : current.filter((e) => e !== emoji);
 
-      // Update local state first for immediate feedback
-      const updatedUserReactions = {
+      // Optimistic local update
+      const updatedUserReactions: UserReactions = {
         ...userReactions,
-        [reactionsKey]: {
-          ...userReactions[reactionsKey],
-          [targetId]: newReactions
-        }
+        [reactionsKey]: { ...userReactions[reactionsKey], [targetId]: newReactions },
       };
       saveUserReactions(updatedUserReactions);
 
-      // Sync with database
-      if (action === 'add') {
-        const { error } = await supabase
-          .from('reactions')
-          .insert({
-            target_id: targetId,
-            target_type: targetType,
-            emoji: emoji,
-            user_fingerprint: fingerprint
-          });
-
-        if (error) {
-          console.error('Error adding reaction:', error);
-          // Revert on error
-          saveUserReactions(userReactions);
-          return false;
-        }
+      // Sync with API
+      if (isAdding) {
+        // POST /reactions
+        await api.post('/reactions', {
+          target_id: targetId,
+          target_type: targetType,
+          emoji,
+          user_fingerprint: fingerprint,
+        });
       } else {
-        const { error } = await supabase
-          .from('reactions')
-          .delete()
-          .match({
-            target_id: targetId,
-            target_type: targetType,
-            emoji: emoji,
-            user_fingerprint: fingerprint
-          });
-
-        if (error) {
-          console.error('Error removing reaction:', error);
-          // Revert on error
-          saveUserReactions(userReactions);
-          return false;
-        }
+        // DELETE /reactions
+        await api.delete('/reactions', {
+          target_id: targetId,
+          target_type: targetType,
+          emoji,
+          user_fingerprint: fingerprint,
+        });
       }
 
       return true;
     } catch (error) {
       console.error('Error toggling reaction:', error);
+      // Revert optimistic update
+      loadUserReactions();
       toast({
-        title: "Reaction Failed 😵",
+        title: 'Reaction Failed 😵',
         description: "Couldn't update your reaction. Please try again.",
-        variant: "destructive"
+        variant: 'destructive',
       });
       return false;
     }
   };
 
-  // Get reaction counts for a target
-  const getReactionCounts = async (targetId: string, targetType: 'confession' | 'comment'): Promise<ReactionCounts> => {
+  // ── Fetch counts for a single target ──────────────────────────────────────
+  const getReactionCounts = async (
+    targetId: string,
+    targetType: 'confession' | 'comment'
+  ): Promise<ReactionCounts> => {
     try {
-      const { data, error } = await supabase
-        .from('reactions')
-        .select('emoji')
-        .eq('target_id', targetId)
-        .eq('target_type', targetType);
+      // GET /reactions?target_id=…&target_type=…
+      const data = await api.get<{ emoji: string }[]>(
+        `/reactions?target_id=${encodeURIComponent(targetId)}&target_type=${encodeURIComponent(targetType)}`
+      );
 
-      if (error) {
-        console.error('Error fetching reaction counts:', error);
-        return {};
-      }
-
-      // Count reactions by emoji
       const counts: ReactionCounts = {};
-      data?.forEach(reaction => {
-        counts[reaction.emoji] = (counts[reaction.emoji] || 0) + 1;
+      data.forEach((r) => {
+        counts[r.emoji] = (counts[r.emoji] ?? 0) + 1;
       });
-
       return counts;
     } catch (error) {
       console.error('Error getting reaction counts:', error);
@@ -162,15 +130,9 @@ export const useReactions = () => {
     }
   };
 
-  // Load user reactions on mount
   useEffect(() => {
     loadUserReactions();
   }, []);
 
-  return {
-    userReactions,
-    availableEmojis,
-    toggleReaction,
-    getReactionCounts
-  };
+  return { userReactions, availableEmojis, toggleReaction, getReactionCounts };
 };

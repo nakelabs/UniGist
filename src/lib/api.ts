@@ -1,15 +1,45 @@
-import { createClient } from '@supabase/supabase-js';
+// Central API client — points at your FastAPI backend.
+// Change this URL when deploying to production.
+const BASE_URL = 'http://localhost:8000';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+async function request<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers ?? {}),
+    },
+    ...options,
+  });
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
+  if (!res.ok) {
+    const errorBody = await res.text();
+    throw new Error(`API error ${res.status}: ${errorBody}`);
+  }
+
+  // 204 No Content
+  if (res.status === 204) return undefined as T;
+
+  return res.json() as Promise<T>;
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const api = {
+  get: <T>(path: string) => request<T>(path),
+  post: <T>(path: string, body: unknown) =>
+    request<T>(path, { method: 'POST', body: JSON.stringify(body) }),
+  patch: <T>(path: string, body: unknown) =>
+    request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
+  delete: <T>(path: string, body?: unknown) =>
+    request<T>(path, {
+      method: 'DELETE',
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    }),
+};
 
-// Database types
+// ─── Database types (unchanged) ──────────────────────────────────────────────
+
 export interface Confession {
   id: string;
   content: string;
@@ -57,29 +87,28 @@ export interface Report {
   updated_at: string;
 }
 
-// Helper function to generate user fingerprint
+// ─── User fingerprint helper ──────────────────────────────────────────────────
+
 export const generateUserFingerprint = (): string => {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   ctx!.textBaseline = 'top';
   ctx!.font = '14px Arial';
   ctx!.fillText('User fingerprint', 2, 2);
-  
+
   const fingerprint = [
     navigator.userAgent,
     navigator.language,
     screen.width + 'x' + screen.height,
     new Date().getTimezoneOffset(),
-    canvas.toDataURL()
+    canvas.toDataURL(),
   ].join('|');
-  
-  // Simple hash function
+
   let hash = 0;
   for (let i = 0; i < fingerprint.length; i++) {
     const char = fingerprint.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
+    hash = hash & hash;
   }
-  
   return Math.abs(hash).toString(36);
 };

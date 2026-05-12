@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { api } from '@/lib/api';
 import { useReports } from '@/hooks/useReports';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -122,38 +122,21 @@ export default function Admin() {
   const loadAdminData = async () => {
     console.log('Loading admin data...');
     try {
-      // Get confession count
-      const { count: confessionCount } = await supabase
-        .from('confessions')
-        .select('*', { count: 'exact', head: true });
+      // GET /admin/stats returns { total_posts, total_comments, total_reports, pending_reports }
+      const data = await api.get<{
+        total_posts: number;
+        total_comments: number;
+        total_reports: number;
+        pending_reports: number;
+      }>('/admin/stats');
 
-      // Get comment count
-      const { count: commentCount } = await supabase
-        .from('comments')
-        .select('*', { count: 'exact', head: true });
-
-      // Get report counts
-      const { count: totalReportCount } = await supabase
-        .from('reports')
-        .select('*', { count: 'exact', head: true });
-
-      const { count: pendingReportCount } = await supabase
-        .from('reports')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending');
-
-      console.log('Admin stats loaded:', {
-        confessionCount,
-        commentCount,
-        totalReportCount,
-        pendingReportCount
-      });
+      console.log('Admin stats loaded:', data);
 
       setStats({
-        totalPosts: confessionCount || 0,
-        totalComments: commentCount || 0,
-        totalReports: totalReportCount || 0,
-        pendingReports: pendingReportCount || 0
+        totalPosts: data.total_posts ?? 0,
+        totalComments: data.total_comments ?? 0,
+        totalReports: data.total_reports ?? 0,
+        pendingReports: data.pending_reports ?? 0,
       });
     } catch (error) {
       console.error('Error fetching admin stats:', error);
@@ -162,47 +145,33 @@ export default function Admin() {
 
   const loadReportsWithContent = async (reportsList: any[]) => {
     try {
-      const reportsWithContent: ReportWithContent[] = [];
-      
-      for (const report of reportsList) {
-        let content = null;
-        
-        if (report.target_type === 'confession') {
-          const { data } = await supabase
-            .from('confessions')
-            .select('content')
-            .eq('id', report.target_id)
-            .single();
-          
-          if (data) {
-            content = {
-              content: data.content,
-              type: 'confession' as const
-            };
+      const enriched: ReportWithContent[] = await Promise.all(
+        reportsList.map(async (report) => {
+          let content = null;
+          try {
+            if (report.target_type === 'confession') {
+              const data = await api.get<{ content: string }>(
+                `/confessions/${report.target_id}`
+              );
+              if (data) content = { content: data.content, type: 'confession' as const };
+            } else if (report.target_type === 'comment') {
+              const data = await api.get<{ content: string; confession_id: string }>(
+                `/comments/${report.target_id}`
+              );
+              if (data)
+                content = {
+                  content: data.content,
+                  type: 'comment' as const,
+                  confession_id: data.confession_id,
+                };
+            }
+          } catch {
+            // Content may have already been deleted — that's fine
           }
-        } else if (report.target_type === 'comment') {
-          const { data } = await supabase
-            .from('comments')
-            .select('content, confession_id')
-            .eq('id', report.target_id)
-            .single();
-          
-          if (data) {
-            content = {
-              content: data.content,
-              type: 'comment' as const,
-              confession_id: data.confession_id
-            };
-          }
-        }
-        
-        reportsWithContent.push({
-          ...report,
-          reported_content: content
-        });
-      }
-      
-      setReportsWithContent(reportsWithContent);
+          return { ...report, reported_content: content };
+        })
+      );
+      setReportsWithContent(enriched);
     } catch (error) {
       console.error('Error loading reports with content:', error);
     }

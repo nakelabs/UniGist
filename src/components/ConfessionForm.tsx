@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { Tag, X, Mic, Image, Video } from 'lucide-react';
-import AudioRecorder from './AudioRecorder';
-import VideoRecorder from './VideoRecorder';
+import { Image, X, Tag, Send } from 'lucide-react';
 import ImageUploader from './ImageUploader';
 import { uploadFile } from '@/lib/fileUpload';
 
@@ -17,292 +15,234 @@ interface ConfessionFormProps {
   }) => Promise<void>;
 }
 
+const SUGGESTED_TAGS = ['university', 'relationships', 'work', 'family', 'secrets', 'funny'];
+
 const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
-  const [newConfession, setNewConfession] = useState('');
+  const [content, setContent] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [currentTag, setCurrentTag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  
-  // Audio recording states
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  
-  // Video upload states
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
-  const [videoContext, setVideoContext] = useState<string>('');
-  
-  // Image upload state
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imageContext, setImageContext] = useState<string>('');
-
-  // Media section visibility states
-  const [showAudioSection, setShowAudioSection] = useState(false);
-  const [showVideoSection, setShowVideoSection] = useState(false);
+  const [imageContext, setImageContext] = useState('');
   const [showImageSection, setShowImageSection] = useState(false);
+  const [showTagSection, setShowTagSection] = useState(false);
 
-  const addTag = () => {
-    const trimmedTag = currentTag.trim().toLowerCase();
-    if (trimmedTag && !tags.includes(trimmedTag) && tags.length < 5) {
-      setTags([...tags, trimmedTag]);
+  const MAX_CHARS = 500;
+  const remaining = MAX_CHARS - content.length;
+  const isNearLimit = remaining <= 50;
+
+  // ── Tag helpers ──────────────────────────────────────────────────────────
+  const addTag = (tag: string) => {
+    const t = tag.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (t && !tags.includes(t) && tags.length < 5) {
+      setTags([...tags, t]);
       setCurrentTag('');
     }
   };
 
-  const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
-  };
+  const removeTag = (t: string) => setTags(tags.filter((x) => x !== t));
 
-  const handleTagKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addTag();
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newConfession.trim() && !imageUrl) return;
-
-    setIsSubmitting(true);
-    try {
-      await onSubmit({
-        content: newConfession,
-        // audioUrl: audioUrl || undefined, // Disabled for now
-        // videoUrl: videoUrl || undefined, // Disabled for now
-        // videoContext: videoContext || undefined, // Disabled for now
-        imageUrl: imageUrl || undefined,
-        imageContext: imageContext || undefined,
-        tags: tags
-      });
-      // Reset form
-      setNewConfession('');
-      setTags([]);
-      setCurrentTag('');
-      setAudioUrl(null);
-      setAudioBlob(null);
-      setVideoUrl(null);
-      setVideoBlob(null);
-      setVideoContext('');
-      setImageUrl(null);
-      setImageContext('');
-      // Close all media sections
-      setShowAudioSection(false);
-      setShowVideoSection(false);
-      setShowImageSection(false);
-    } catch (error) {
-      console.error('Error submitting confession:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  // ── File upload ──────────────────────────────────────────────────────────
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith('image/')) return;
 
     setIsUploading(true);
     try {
-      if (file.type.startsWith('audio/')) {
-        console.log("Uploading audio file...");
-        const permanentUrl = await uploadFile(file, 'audio_confession');
-        setAudioUrl(permanentUrl);
-        setAudioBlob(file);
-        console.log("Audio Uploaded! 🎧 - Your audio confession has been saved.");
-      } else if (file.type.startsWith('video/')) {
-        console.log("Uploading video file...");
-        const permanentUrl = await uploadFile(file, 'video_confession');
-        setVideoUrl(permanentUrl);
-        setVideoBlob(file);
-        console.log("Video Uploaded! 🎬 - Your video confession has been saved.");
-      } else if (file.type.startsWith('image/')) {
-        console.log("Uploading image file...");
-        const permanentUrl = await uploadFile(file, 'image_confession');
-        setImageUrl(permanentUrl);
-        console.log("Image Uploaded! 🖼️ - Your image confession has been saved.");
-      } else {
-        console.log("Invalid File! ⚠️ - Please upload an audio, video, or image file.");
-      }
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      
-      // Show user-friendly error message
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      console.log(`Upload Failed! ❌ - ${errorMessage}. Please try again.`);
-      
-      // For audio/video, we can still use local URLs as fallback
-      if (file.type.startsWith('audio/')) {
-        const localUrl = URL.createObjectURL(file);
-        setAudioUrl(localUrl);
-        setAudioBlob(file);
-        console.log("Audio saved locally temporarily. ⚠️ - Will not persist after refresh.");
-      } else if (file.type.startsWith('video/')) {
-        const localUrl = URL.createObjectURL(file);
-        setVideoUrl(localUrl);
-        setVideoBlob(file);
-        console.log("Video saved locally temporarily. ⚠️ - Will not persist after refresh.");
-      } else if (file.type.startsWith('image/')) {
-        const localUrl = URL.createObjectURL(file);
-        setImageUrl(localUrl);
-        console.log("Image saved locally temporarily. ⚠️ - Will not persist after refresh.");
-      }
+      const url = await uploadFile(file, 'image_confession');
+      setImageUrl(url);
+    } catch {
+      const url = URL.createObjectURL(file);
+      setImageUrl(url);
     } finally {
       setIsUploading(false);
     }
   };
 
+  // ── Submit ───────────────────────────────────────────────────────────────
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!content.trim() && !imageUrl) return;
+
+    setIsSubmitting(true);
+    try {
+      await onSubmit({
+        content,
+        imageUrl: imageUrl || undefined,
+        imageContext: imageContext || undefined,
+        tags,
+      });
+      setContent('');
+      setTags([]);
+      setCurrentTag('');
+      setImageUrl(null);
+      setImageContext('');
+      setShowImageSection(false);
+      setShowTagSection(false);
+    } catch (err) {
+      console.error('Error submitting confession:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const canPost = (content.trim().length > 0 || !!imageUrl) && !isSubmitting && !isUploading;
+
   return (
-    <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm rounded-3xl p-8 border border-gray-700/50 max-w-2xl mx-auto mb-12"
-    >
-      <h2 className="font-pixel text-lg text-retro-cyber-yellow mb-4 animate-glow">
-        🗣️ SPILL THE TEA
-      </h2>
-        <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="post-card mb-2 animate-fade-up">
+      <form onSubmit={handleSubmit}>
+        {/* Text area */}
+        <div className="px-4 pt-4 pb-2">
           <textarea
-            value={newConfession}
-            onChange={(e) => setNewConfession(e.target.value)}
-            placeholder="Type your anonymous confession here... no judgment, just vibes ✨"
-            className="w-full h-32 resize-none bg-gray-900/50 border border-retro-electric-blue/30 rounded-2xl p-4 text-retro-neon-green font-cyber focus:outline-none focus:border-retro-cyber-yellow focus:ring-1 focus:ring-retro-cyber-yellow transition-all"
-            maxLength={500}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Share something anonymously..."
+            className="field min-h-[100px] text-[15px] leading-relaxed"
+            maxLength={MAX_CHARS}
           />
 
-        {/* Tags Input */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Tag className="w-4 h-4 text-retro-cyber-yellow" />
-            <label className="font-cyber text-sm text-retro-neon-green">
-              Add tags (optional, max 5):
-            </label>
+          {/* Character counter */}
+          <div className="flex justify-end mt-1">
+            <span className={`text-xs font-medium ${isNearLimit ? 'text-[#ff2d55]' : 'text-[#555]'}`}>
+              {remaining}
+            </span>
           </div>
-          
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={currentTag}
-              onChange={(e) => setCurrentTag(e.target.value)}
-              onKeyPress={handleTagKeyPress}
-              placeholder="Type a tag and press Enter..."
-              className="flex-1 bg-gray-900/50 border border-retro-electric-blue/30 rounded-2xl p-3 text-retro-neon-green font-cyber text-sm focus:outline-none focus:border-retro-cyber-yellow focus:ring-1 focus:ring-retro-cyber-yellow transition-all"
-              maxLength={20}
+        </div>
+
+        {/* Image section */}
+        {showImageSection && (
+          <div className="px-4 pb-3 animate-fade-in">
+            <ImageUploader
+              imageUrl={imageUrl}
+              setImageUrl={setImageUrl}
+              handleFileUpload={handleFileUpload}
+              imageContext={imageContext}
+              setImageContext={setImageContext}
+            />
+          </div>
+        )}
+
+        {/* Image preview */}
+        {imageUrl && !showImageSection && (
+          <div className="px-4 pb-3 relative">
+            <img
+              src={imageUrl}
+              alt="Attached"
+              className="w-full max-h-64 object-cover rounded-xl"
             />
             <button
               type="button"
-              onClick={addTag}
-              disabled={!currentTag.trim() || tags.length >= 5}
-              className="px-4 py-3 bg-retro-cyber-yellow text-black font-pixel text-xs hover:bg-retro-neon-green disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl transition-all"
+              onClick={() => setImageUrl(null)}
+              className="absolute top-2 right-6 p-1.5 bg-black/70 rounded-full text-white hover:bg-black"
             >
-              Add
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
+        )}
 
-          {/* Display current tags */}
-          {tags.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {tags.map((tag, index) => (
-                <span
-                  key={index}
-                  className="flex items-center gap-1 px-3 py-1 bg-retro-electric-blue/20 border border-retro-electric-blue/40 text-retro-electric-blue font-pixel text-xs rounded-full"
+        {/* Tag section */}
+        {showTagSection && (
+          <div className="px-4 pb-3 animate-fade-in space-y-2">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={currentTag}
+                onChange={(e) => setCurrentTag(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(currentTag); }}}
+                placeholder="Add a tag..."
+                className="field flex-1 py-2"
+                maxLength={20}
+              />
+              <button
+                type="button"
+                onClick={() => addTag(currentTag)}
+                className="btn-ghost px-3"
+                disabled={!currentTag.trim() || tags.length >= 5}
+              >
+                Add
+              </button>
+            </div>
+
+            {/* Suggested tags */}
+            <div className="flex flex-wrap gap-1.5">
+              {SUGGESTED_TAGS.filter((t) => !tags.includes(t)).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => addTag(t)}
+                  className="tag-pill cursor-pointer hover:border-white/20 hover:text-white transition-colors"
+                  disabled={tags.length >= 5}
                 >
-                  #{tag}
-                  <button
-                    type="button"
-                    onClick={() => removeTag(tag)}
-                    className="text-retro-hot-pink hover:text-retro-cyber-yellow ml-1"
-                    title="Remove tag"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
+                  #{t}
+                </button>
               ))}
             </div>
-          )}
 
-          <div className="text-xs text-retro-electric-blue/70">
-            Suggested tags: #university #relationships #work #family #secrets #funny #embarrassing
+            {/* Selected tags */}
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {tags.map((t) => (
+                  <span key={t} className="tag-pill border-[#ff2d55]/40 text-[#ff2d55] flex items-center gap-1">
+                    #{t}
+                    <button type="button" onClick={() => removeTag(t)} className="hover:text-white">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
-        
-        {/* Media Upload Section - Icon Toggles */}
-        <div className="space-y-4">
-          {/* Media Type Icons - Always Visible */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="font-cyber text-sm text-retro-cyber-yellow mr-2">Add media:</span>
-            
-            {/* Audio Toggle Button - Disabled (Coming Soon) */}
-            <button
-              type="button"
-              disabled
-              className="relative flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300 bg-gray-800/30 border-retro-electric-blue/20 text-retro-electric-blue/40 cursor-not-allowed opacity-60"
-              title="Audio uploads coming soon!"
-            >
-              <Mic className="w-4 h-4" />
-              <span className="font-cyber text-xs">Audio</span>
-              <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-retro-cyber-yellow text-black font-pixel text-[8px] rounded-full animate-pulse">
-                SOON
-              </span>
-            </button>
+        )}
 
-            {/* Video Toggle Button - Disabled (Coming Soon) */}
-            <button
-              type="button"
-              disabled
-              className="relative flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300 bg-gray-800/30 border-retro-hot-pink/20 text-retro-hot-pink/40 cursor-not-allowed opacity-60"
-              title="Video uploads coming soon!"
-            >
-              <Video className="w-4 h-4" />
-              <span className="font-cyber text-xs">Video</span>
-              <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-retro-cyber-yellow text-black font-pixel text-[8px] rounded-full animate-pulse">
-                SOON
-              </span>
-            </button>
-
-            {/* Image Toggle Button */}
+        {/* Bottom toolbar */}
+        <div className="divider" />
+        <div className="px-4 py-2 flex items-center justify-between">
+          {/* Media / tag toggles */}
+          <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={() => setShowImageSection(!showImageSection)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300 ${
-                showImageSection || imageUrl
-                  ? 'bg-gradient-to-r from-retro-cyber-yellow/30 to-retro-electric-blue/30 border-retro-cyber-yellow text-retro-cyber-yellow shadow-lg shadow-retro-cyber-yellow/20'
-                  : 'bg-gray-800/50 border-retro-cyber-yellow/30 text-retro-cyber-yellow/70 hover:border-retro-cyber-yellow hover:bg-retro-cyber-yellow/10'
-              }`}
-              title="Add image"
+              className={`action-btn ${(showImageSection || imageUrl) ? 'text-[#ff2d55]' : ''}`}
+              title="Attach image"
             >
               <Image className="w-4 h-4" />
-              <span className="font-cyber text-xs">Image</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowTagSection(!showTagSection)}
+              className={`action-btn ${showTagSection || tags.length > 0 ? 'text-[#7c3aed]' : ''}`}
+              title="Add tags"
+            >
+              <Tag className="w-4 h-4" />
+              {tags.length > 0 && (
+                <span className="text-xs font-medium text-[#7c3aed]">{tags.length}</span>
+              )}
             </button>
           </div>
 
-          {/* Audio Section - Disabled for now */}
-          {/* Coming Soon Feature */}
-
-          {/* Video Section - Disabled for now */}
-          {/* Coming Soon Feature */}
-
-          {/* Collapsible Image Section */}
-          {showImageSection && (
-            <div className="animate-accordion-down">
-              <ImageUploader 
-                imageUrl={imageUrl}
-                setImageUrl={setImageUrl}
-                handleFileUpload={handleFileUpload}
-                imageContext={imageContext}
-                setImageContext={setImageContext}
-              />
-            </div>
-          )}
-        </div>
-        
-        <div className="flex justify-between items-center">
-          <span className="font-cyber text-sm text-retro-electric-blue">
-            {500 - newConfession.length} characters left
-          </span>
+          {/* Post button */}
           <button
             type="submit"
-            className="px-6 py-3 bg-gradient-to-r from-retro-electric-blue to-retro-hot-pink rounded-2xl text-white font-bold hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-            disabled={(!newConfession.trim() && !audioUrl && !videoUrl && !imageUrl) || isSubmitting || isUploading}
+            disabled={!canPost}
+            className="btn-brand"
           >
-            {isUploading ? 'UPLOADING...' : isSubmitting ? 'POSTING...' : 'CONFESS NOW! 🚀'}
+            {isUploading ? (
+              <span className="flex items-center gap-2">
+                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Uploading
+              </span>
+            ) : isSubmitting ? (
+              <span className="flex items-center gap-2">
+                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Posting
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Send className="w-3.5 h-3.5" />
+                Post
+              </span>
+            )}
           </button>
         </div>
       </form>

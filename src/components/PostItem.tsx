@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Heart, ArrowUp, ArrowDown, MessageCircle, Send } from 'lucide-react';
 import { ConfessionWithComments } from '@/hooks/useConfessions';
-import { Comment } from '@/lib/supabase';
+import { Comment } from '@/lib/api';
 
 interface PostItemProps {
   post: ConfessionWithComments;

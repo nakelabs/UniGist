@@ -35,7 +35,7 @@ const AudioRecorder = ({ audioUrl, setAudioUrl, setAudioBlob, handleFileUpload, 
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         setAudioBlob(audioBlob);
         
-        // Upload the recorded audio to Supabase Storage
+        // Upload the recorded audio via FastAPI /upload endpoint
         setIsUploadingRecording(true);
         try {
           console.log("Uploading recorded audio...");

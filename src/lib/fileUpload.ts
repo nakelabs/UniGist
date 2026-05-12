@@ -1,55 +1,73 @@
-import { supabase } from './supabase';
+// File upload utilities — uses FastAPI multipart upload endpoint.
+// Change this URL when deploying to production.
+const BASE_URL = 'http://localhost:8000';
 
-export const uploadFile = async (file: Blob, fileName: string, bucket: string = 'confessions'): Promise<string> => {
-  try {
-    // Generate a unique filename
-    const timestamp = Date.now();
-    const randomString = Math.random().toString(36).substring(2, 15);
-    const fileExtension = getFileExtension(file);
-    const uniqueFileName = `${timestamp}_${randomString}_${fileName}${fileExtension}`;
+/**
+ * Upload a Blob/File to POST /upload.
+ * The server returns { url: string } with the public URL of the stored file.
+ *
+ * @param file       The Blob or File to upload.
+ * @param fileName   Base name hint (extension will be inferred from MIME type).
+ * @param _bucket    Kept for API compatibility – ignored; FastAPI handles routing.
+ */
+export const uploadFile = async (
+  file: Blob,
+  fileName: string,
+  _bucket: string = 'confessions'
+): Promise<string> => {
+  const timestamp = Date.now();
+  const randomString = Math.random().toString(36).substring(2, 15);
+  const fileExtension = getFileExtension(file);
+  const uniqueFileName = `${timestamp}_${randomString}_${fileName}${fileExtension}`;
 
-    console.log(`Uploading file: ${uniqueFileName} to bucket: ${bucket}`);
+  console.log(`Uploading file: ${uniqueFileName}`);
 
-    // Try to create bucket if it doesn't exist (will fail silently if it exists)
-    try {
-      await supabase.storage.createBucket(bucket, {
-        public: true,
-        allowedMimeTypes: ['audio/*', 'video/*', 'image/*'],
-        fileSizeLimit: 50 * 1024 * 1024 // 50MB limit
-      });
-      console.log(`Bucket ${bucket} created or already exists`);
-    } catch (bucketError) {
-      // Bucket probably already exists, continue
-      console.log(`Bucket ${bucket} already exists or creation failed:`, bucketError);
-    }
+  const formData = new FormData();
+  formData.append('file', file, uniqueFileName);
 
-    // Upload file to Supabase Storage
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .upload(uniqueFileName, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
+  const res = await fetch(`${BASE_URL}/upload`, {
+    method: 'POST',
+    body: formData,
+    // Do NOT set Content-Type here — let the browser set the multipart boundary.
+  });
 
-    if (error) {
-      console.error('Upload error:', error);
-      throw error;
-    }
-
-    console.log('File uploaded successfully:', data);
-
-    // Get the public URL
-    const { data: urlData } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(uniqueFileName);
-
-    console.log('Public URL:', urlData.publicUrl);
-    return urlData.publicUrl;
-  } catch (error) {
-    console.error('Error uploading file:', error);
-    throw error;
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error('Upload error:', errorText);
+    throw new Error(`Upload failed (${res.status}): ${errorText}`);
   }
+
+  const data: { url: string } = await res.json();
+  console.log('Upload success, public URL:', data.url);
+  return data.url;
 };
+
+/**
+ * Delete a previously uploaded file via DELETE /upload.
+ * The server accepts { url: string } in the request body.
+ */
+export const deleteFile = async (
+  url: string,
+  _bucket: string = 'confessions'
+): Promise<void> => {
+  console.log(`Deleting file: ${url}`);
+
+  const res = await fetch(`${BASE_URL}/upload`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error('Delete error:', errorText);
+    throw new Error(`Delete failed (${res.status}): ${errorText}`);
+  }
+
+  console.log('File deleted successfully');
+};
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const getFileExtension = (file: Blob): string => {
   if (file.type.startsWith('audio/')) {
@@ -73,28 +91,4 @@ const getFileExtension = (file: Blob): string => {
     return '.image';
   }
   return '';
-};
-
-export const deleteFile = async (url: string, bucket: string = 'confessions'): Promise<void> => {
-  try {
-    // Extract filename from URL
-    const urlParts = url.split('/');
-    const fileName = urlParts[urlParts.length - 1];
-
-    console.log(`Deleting file: ${fileName} from bucket: ${bucket}`);
-
-    const { error } = await supabase.storage
-      .from(bucket)
-      .remove([fileName]);
-
-    if (error) {
-      console.error('Delete error:', error);
-      throw error;
-    }
-
-    console.log('File deleted successfully');
-  } catch (error) {
-    console.error('Error deleting file:', error);
-    throw error;
-  }
 };
