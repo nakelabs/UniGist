@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Heart, ArrowUp, ArrowDown, MessageCircle, Send } from 'lucide-react';
 import { ConfessionWithComments } from '@/hooks/useConfessions';
 import { Comment } from '@/lib/api';
 
@@ -124,7 +123,7 @@ const PostItem = ({
             }`}
             disabled={userVotes.upvoted}
           >
-            <ArrowUp className="w-4 h-4 group-hover:animate-bounce-retro" />
+            <span className="text-base leading-none">↑</span>
             <span className="font-cyber text-sm">{post.upvotes}</span>
           </button>
           
@@ -137,7 +136,7 @@ const PostItem = ({
             }`}
             disabled={userVotes.downvoted}
           >
-            <ArrowDown className="w-4 h-4 group-hover:animate-bounce-retro" />
+            <span className="text-base leading-none">↓</span>
             <span className="font-cyber text-sm">{post.downvotes}</span>
           </button>
 
@@ -145,13 +144,13 @@ const PostItem = ({
             onClick={() => onToggleComments(post.id)}
             className="flex items-center space-x-1 text-retro-electric-blue hover:text-retro-cyber-yellow transition-colors group"
           >
-            <MessageCircle className="w-4 h-4 group-hover:animate-bounce-retro" />
+            <span className="text-sm leading-none">⧁</span>
             <span className="font-cyber text-sm">{post.comments.length}</span>
           </button>
         </div>
 
         <div className="flex items-center space-x-1 text-retro-electric-blue">
-          <Heart className="w-4 h-4" />
+          <span className="text-sm leading-none">♥</span>
           <span className="font-cyber text-sm">
             {post.upvotes - post.downvotes} vibes
           </span>
@@ -189,7 +188,7 @@ const PostItem = ({
                 className="px-3 py-2 bg-retro-cyber-yellow text-black font-pixel text-xs hover:bg-retro-neon-green disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Submit comment"
               >
-                {isSubmittingComment ? '...' : <Send className="w-4 h-4" />}
+                {isSubmittingComment ? '...' : 'Reply'}
               </button>
             </div>
             <div className="text-xs text-retro-hot-pink/70 mt-1">
@@ -226,7 +225,7 @@ const PostItem = ({
                       }`}
                       disabled={commentUserVotes.upvoted}
                     >
-                      <ArrowUp className="w-3 h-3" />
+                      <span className="text-sm leading-none">↑</span>
                       <span className="font-cyber text-xs">{comment.upvotes}</span>
                     </button>
                     
@@ -239,7 +238,7 @@ const PostItem = ({
                       }`}
                       disabled={commentUserVotes.downvoted}
                     >
-                      <ArrowDown className="w-3 h-3" />
+                      <span className="text-sm leading-none">↓</span>
                       <span className="font-cyber text-xs">{comment.downvotes}</span>
                     </button>
 
@@ -257,7 +256,7 @@ const PostItem = ({
             
             {post.comments.length === 0 && (
               <div className="text-center text-retro-electric-blue/50 font-cyber text-sm py-4">
-                No replies yet. Be the first to respond anonymously! 👻
+                No replies yet. Be the first to respond anonymously!
               </div>
             )}
           </div>

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Filter, Clock, TrendingUp, Search, X, Tag } from 'lucide-react';
 import PostItem from './PostItem';
 import ReportModal from './ReportModal';
 import { ConfessionWithComments } from '@/hooks/useConfessions';
@@ -145,21 +144,21 @@ const PostFeed = ({
         
         {/* Search Bar */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-retro-electric-blue" />
+          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-retro-electric-blue text-xs select-none">&#9906;</span>
           <input
             type="text"
             placeholder="Search confessions or tags..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-900/50 border border-retro-electric-blue/30 rounded text-retro-neon-green font-cyber text-sm focus:outline-none focus:border-retro-cyber-yellow"
+            className="w-full pl-8 pr-4 py-2 bg-gray-900/50 border border-retro-electric-blue/30 rounded text-retro-neon-green font-cyber text-sm focus:outline-none focus:border-retro-cyber-yellow"
           />
           {searchTerm && (
             <button
               onClick={() => setSearchTerm('')}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-retro-hot-pink hover:text-retro-cyber-yellow"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-retro-hot-pink hover:text-retro-cyber-yellow font-bold text-base leading-none"
               title="Clear search"
             >
-              <X className="w-4 h-4" />
+              ×
             </button>
           )}
         </div>
@@ -167,7 +166,7 @@ const PostFeed = ({
         {/* Tag Filter */}
         {getAllTags().length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
-            <Tag className="w-4 h-4 text-retro-cyber-yellow" />
+            <span className="text-retro-cyber-yellow text-xs font-semibold">#</span>
             <span className="font-cyber text-sm text-retro-neon-green">Tags:</span>
             <button
               onClick={() => setSelectedTag('')}
@@ -198,8 +197,7 @@ const PostFeed = ({
         {/* Sorting Controls */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-retro-cyber-yellow" />
-            <span className="font-cyber text-sm text-retro-neon-green">Sort by:</span>
+            <span className="text-retro-cyber-yellow text-xs font-semibold">Sort by:</span>
             <div className="flex gap-1">
               <button
                 onClick={() => setSortBy('newest')}
@@ -209,7 +207,6 @@ const PostFeed = ({
                     : 'bg-transparent text-retro-neon-green border-retro-neon-green hover:bg-retro-neon-green hover:text-black'
                 }`}
               >
-                <Clock className="w-3 h-3 inline mr-1" />
                 Newest
               </button>
               <button
@@ -220,7 +217,6 @@ const PostFeed = ({
                     : 'bg-transparent text-retro-neon-green border-retro-neon-green hover:bg-retro-neon-green hover:text-black'
                 }`}
               >
-                <TrendingUp className="w-3 h-3 inline mr-1" />
                 Top
               </button>
               <button

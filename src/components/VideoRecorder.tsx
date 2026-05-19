@@ -1,4 +1,3 @@
-import { Upload, MessageSquare } from 'lucide-react';
 
 interface VideoRecorderProps {
   videoUrl: string | null;
@@ -45,7 +44,6 @@ const VideoRecorder = ({ videoUrl, setVideoUrl, setVideoBlob, handleFileUpload, 
       {/* Video Context Text Input */}
       <div className="mt-6">
         <div className="flex items-center gap-2 mb-3">
-          <MessageSquare className="w-4 h-4 text-retro-electric-blue" />
           <label className="text-retro-electric-blue font-cyber text-sm">
             Add context to your video (optional):
           </label>

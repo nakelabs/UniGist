@@ -48,6 +48,12 @@ export interface Confession {
   video_context?: string;
   image_url?: string;
   image_context?: string;
+  image_self_destruct?: boolean;
+  building_flair?: string;
+  poll?: {
+    question: string;
+    options: { id: string; text: string; votes: number }[];
+  };
   tags: string[];
   upvotes: number;
   downvotes: number;

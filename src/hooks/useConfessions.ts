@@ -69,7 +69,10 @@ export const useConfessions = () => {
     videoContext?: string;
     imageUrl?: string;
     imageContext?: string;
+    imageSelfDestruct?: boolean;
     tags?: string[];
+    buildingFlair?: string;
+    poll?: { question: string; options: string[] };
   }) => {
     try {
       const data = await api.post<Confession>('/confessions', {
@@ -79,6 +82,9 @@ export const useConfessions = () => {
         video_context: confessionData.videoContext,
         image_url: confessionData.imageUrl,
         image_context: confessionData.imageContext,
+        image_self_destruct: confessionData.imageSelfDestruct,
+        building_flair: confessionData.buildingFlair,
+        poll: confessionData.poll,
         tags: confessionData.tags ?? [],
       });
 
@@ -196,6 +202,44 @@ export const useConfessions = () => {
     );
   };
 
+  const votePoll = async (confessionId: string, optionId: string) => {
+    try {
+      // Optimistic update
+      setConfessions((prev) =>
+        prev.map((confession) => {
+          if (confession.id !== confessionId || !confession.poll) return confession;
+          
+          return {
+            ...confession,
+            poll: {
+              ...confession.poll,
+              options: confession.poll.options.map(opt => 
+                opt.id === optionId ? { ...opt, votes: opt.votes + 1 } : opt
+              )
+            }
+          };
+        })
+      );
+
+      await api.post(`/confessions/${confessionId}/poll-vote`, { optionId });
+      
+      // Store in local storage to prevent multi-voting
+      const votedPolls = JSON.parse(localStorage.getItem('votedPolls') || '{}');
+      votedPolls[confessionId] = optionId;
+      localStorage.setItem('votedPolls', JSON.stringify(votedPolls));
+
+    } catch (error) {
+      console.error('Error voting on poll:', error);
+      toast({
+        title: 'Error voting',
+        description: 'Could not submit your vote.',
+        variant: 'destructive',
+      });
+      // Revert optimistic update by refetching
+      fetchConfessions();
+    }
+  };
+
   useEffect(() => {
     fetchConfessions();
 
@@ -221,6 +265,7 @@ export const useConfessions = () => {
     addComment,
     toggleComments,
     updateVoteCount,
+    votePoll,
     refetch: fetchConfessions,
   };
 };

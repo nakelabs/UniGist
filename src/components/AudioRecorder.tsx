@@ -1,6 +1,5 @@
 
 import { useState, useRef } from 'react';
-import { Mic, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { uploadFile } from '@/lib/fileUpload';
 
@@ -104,12 +103,10 @@ const AudioRecorder = ({ audioUrl, setAudioUrl, setAudioBlob, handleFileUpload, 
           className={`retro-button flex items-center ${isRecording ? 'bg-retro-hot-pink animate-pulse' : ''}`}
           disabled={isUploadingRecording}
         >
-          <Mic className="w-4 h-4 mr-2" />
           {isRecording ? 'STOP RECORDING' : isUploadingRecording ? 'UPLOADING...' : 'RECORD AUDIO'}
         </button>
         
         <label className={`retro-button flex items-center cursor-pointer ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-          <Upload className="w-4 h-4 mr-2" />
           {isUploading ? 'UPLOADING...' : 'UPLOAD AUDIO'}
           <input
             type="file"

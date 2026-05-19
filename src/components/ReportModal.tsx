@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { X, Flag, AlertTriangle } from 'lucide-react';
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -98,23 +97,22 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, onSubmit, po
       <div className="retro-card max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
-            <Flag className="w-5 h-5 text-retro-hot-pink" />
             <h2 className="font-pixel text-lg text-retro-cyber-yellow">
               Report {isComment ? 'Comment' : 'Confession'} #{postId.slice(-8)}
             </h2>
           </div>
           <button 
             onClick={handleClose}
-            className="text-retro-hot-pink hover:text-retro-cyber-yellow transition-colors"
+            className="text-retro-hot-pink hover:text-retro-cyber-yellow transition-colors font-bold text-xl leading-none"
             title="Close report modal"
           >
-            <X className="w-5 h-5" />
+            ×
           </button>
         </div>
 
         <div className="mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle className="w-4 h-4 text-retro-cyber-yellow" />
+          <div className="flex items-start gap-2 mb-4">
+            <span className="text-retro-cyber-yellow font-bold text-xs mt-0.5">!</span>
             <p className="font-cyber text-sm text-retro-pastel-blue">
               Help us keep UniGist safe by reporting content that violates our community guidelines.
             </p>

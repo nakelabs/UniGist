@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, X } from 'lucide-react';
 import { useReactions, ReactionCounts } from '@/hooks/useReactions';
 
 interface EmojiReactionsProps {
@@ -93,9 +92,9 @@ const EmojiReactions = ({ targetId, targetType, className = '' }: EmojiReactions
         >
           <div className="relative">
             {showEmojiPicker ? (
-              <X className="w-4 h-4 transform group-hover:rotate-90 transition-transform duration-300" />
+              <span className="text-base font-bold leading-none transform group-hover:rotate-90 transition-transform duration-300">×</span>
             ) : (
-              <Plus className="w-4 h-4 transform group-hover:rotate-90 transition-transform duration-300" />
+              <span className="text-base font-bold leading-none transform group-hover:rotate-90 transition-transform duration-300">+</span>
             )}
             {!showEmojiPicker && (
               <div className="absolute inset-0 bg-gradient-to-r from-retro-cyber-yellow/0 to-retro-electric-blue/0 group-hover:from-retro-cyber-yellow/40 group-hover:to-retro-electric-blue/40 rounded-full transition-all duration-300 -z-10"></div>
@@ -116,10 +115,10 @@ const EmojiReactions = ({ targetId, targetType, className = '' }: EmojiReactions
                 </div>
                 <button
                   onClick={() => setShowEmojiPicker(false)}
-                  className="w-6 h-6 flex items-center justify-center rounded-full bg-retro-hot-pink/20 text-retro-hot-pink hover:bg-retro-hot-pink/40 transition-all duration-200"
+                  className="w-6 h-6 flex items-center justify-center rounded-full bg-retro-hot-pink/20 text-retro-hot-pink hover:bg-retro-hot-pink/40 transition-all duration-200 font-bold text-sm leading-none"
                   title="Close emoji picker"
                 >
-                  <X className="w-3 h-3" />
+                  ×
                 </button>
               </div>
 

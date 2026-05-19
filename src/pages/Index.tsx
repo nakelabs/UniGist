@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, X, ArrowUp, ArrowDown, MessageCircle, Flag, RefreshCw, Send, ChevronDown } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import ConfessionForm from '@/components/ConfessionForm';
 import PageFooter from '@/components/PageFooter';
@@ -75,8 +74,8 @@ function CommentSection({ postId, comments, onAddComment, onReport }: CommentSec
       {/* Comments list */}
       {comments.map((c) => (
         <div key={c.id} className="flex gap-3 group">
-          <div className="w-7 h-7 rounded-full bg-[#252525] flex-shrink-0 flex items-center justify-center text-sm">
-            👤
+          <div className="w-7 h-7 rounded-full bg-[#252525] flex-shrink-0 flex items-center justify-center text-xs text-[#555] font-bold">
+            A
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[14px] text-[#e0e0e0] leading-relaxed break-words">{c.content}</p>
@@ -95,13 +94,13 @@ function CommentSection({ postId, comments, onAddComment, onReport }: CommentSec
       ))}
 
       {comments.length === 0 && (
-        <p className="text-xs text-[#444] text-center py-2">No replies yet — be the first 👻</p>
+        <p className="text-xs text-[#444] text-center py-2">No replies yet — be the first</p>
       )}
 
       {/* Input */}
       <div className="flex items-center gap-2 pt-1 border-t border-[#222]">
-        <div className="w-7 h-7 rounded-full bg-[#252525] flex-shrink-0 flex items-center justify-center text-sm">
-          👻
+        <div className="w-7 h-7 rounded-full bg-[#252525] flex-shrink-0 flex items-center justify-center text-xs text-[#555] font-bold">
+          G
         </div>
         <input
           ref={textareaRef as any}
@@ -115,11 +114,121 @@ function CommentSection({ postId, comments, onAddComment, onReport }: CommentSec
         <button
           onClick={submit}
           disabled={!value.trim() || busy}
-          className="text-[#ff2d55] disabled:text-[#444] transition-colors"
+          className="text-[#ff2d55] disabled:text-[#444] transition-colors text-xs font-semibold tracking-wide"
         >
-          <Send className="w-4 h-4" />
+          Reply
         </button>
       </div>
+    </div>
+  );
+}
+
+function SelfDestructImage({ src, alt, context }: { src: string; alt: string; context?: string }) {
+  const [revealed, setRevealed] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(5);
+  const [destroyed, setDestroyed] = useState(false);
+
+  useEffect(() => {
+    if (revealed && timeLeft > 0) {
+      const timer = setTimeout(() => setTimeLeft(prev => prev - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (revealed && timeLeft === 0) {
+      setDestroyed(true);
+      setRevealed(false);
+    }
+  }, [revealed, timeLeft]);
+
+  if (destroyed) {
+    return (
+      <div className="w-full h-48 bg-[#1a1a1a] border border-[#333] rounded-xl flex flex-col items-center justify-center text-[#555]">
+        <span className="text-3xl mb-2 opacity-40">&#x2715;</span>
+        <span className="text-sm font-medium">Image self-destructed</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      {context && <p className="text-xs text-[#777] mb-2 italic">{context}</p>}
+      <div className="relative group rounded-xl overflow-hidden">
+        <img
+          src={src}
+          alt={alt}
+          className={`w-full max-h-80 object-cover transition-all duration-300 ${!revealed ? 'blur-2xl scale-110' : ''}`}
+        />
+        {!revealed ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 text-white">
+            <button
+              onClick={() => setRevealed(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-full font-medium transition-colors text-sm"
+            >
+              Tap to reveal (5s)
+            </button>
+          </div>
+        ) : (
+          <div className="absolute top-3 right-3 px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-white text-xs font-bold font-mono">
+            00:0{timeLeft}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PollCard({ 
+  poll, 
+  onVote, 
+  hasVotedId 
+}: { 
+  poll: { question: string; options: { id: string; text: string; votes: number }[] }; 
+  onVote: (optionId: string) => void;
+  hasVotedId?: string;
+}) {
+  const totalVotes = poll.options.reduce((sum, o) => sum + o.votes, 0);
+
+  return (
+    <div className="bg-[#141414] border border-[#2a2a2a] rounded-xl p-4 my-2">
+      <p className="font-medium text-[#e0e0e0] mb-3">{poll.question}</p>
+      <div className="space-y-2">
+        {poll.options.map(opt => {
+          const percentage = totalVotes > 0 ? Math.round((opt.votes / totalVotes) * 100) : 0;
+          const isWinner = hasVotedId && opt.votes === Math.max(...poll.options.map(o => o.votes));
+          const isSelected = hasVotedId === opt.id;
+
+          return (
+            <button
+              key={opt.id}
+              onClick={() => !hasVotedId && onVote(opt.id)}
+              disabled={!!hasVotedId}
+              className={`relative w-full text-left p-3 rounded-lg border transition-all duration-300 overflow-hidden ${
+                hasVotedId 
+                  ? 'border-transparent bg-[#1e1e1e] cursor-default' 
+                  : 'border-[#333] hover:border-[#555] hover:bg-[#1a1a1a]'
+              }`}
+            >
+              {hasVotedId && (
+                <div 
+                  className={`absolute inset-0 opacity-20 ${isWinner ? 'bg-[#ff2d55]' : 'bg-white'}`}
+                  style={{ width: `${percentage}%`, transition: 'width 1s ease-out' }}
+                />
+              )}
+              <div className="relative flex justify-between items-center z-10">
+                <span className={`text-sm ${isSelected ? 'font-bold text-white' : 'text-[#ccc]'}`}>
+                  {opt.text} {isSelected && '✓'}
+                </span>
+                {hasVotedId && (
+                  <span className={`text-xs font-medium ${isWinner ? 'text-[#ff2d55]' : 'text-[#777]'}`}>
+                    {percentage}%
+                  </span>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-right text-[10px] text-[#555] mt-2 uppercase tracking-wider">
+        {totalVotes} votes
+      </p>
     </div>
   );
 }
@@ -134,7 +243,7 @@ const Index = () => {
   const [isReportingComment, setIsReportingComment] = useState(false);
   const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
 
-  const { confessions, loading, createConfession, addComment, updateVoteCount, refetch } = useConfessions();
+  const { confessions, loading, createConfession, addComment, updateVoteCount, votePoll, refetch } = useConfessions();
   const { userVotes, vote } = useVotes();
   const { createReport } = useReports();
 
@@ -142,7 +251,9 @@ const Index = () => {
 
   const handleSubmit = async (data: {
     content: string; audioUrl?: string; videoUrl?: string;
-    videoContext?: string; imageUrl?: string; imageContext?: string; tags?: string[];
+    videoContext?: string; imageUrl?: string; imageContext?: string; 
+    imageSelfDestruct?: boolean; tags?: string[]; buildingFlair?: string;
+    poll?: { question: string; options: string[] };
   }) => {
     try { await createConfession(data); } catch { /* toast handled inside hook */ }
   };
@@ -211,17 +322,17 @@ const Index = () => {
         <div className="flex items-center gap-2 py-1">
           {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#555]" />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555] text-xs select-none">&#9906;</span>
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search posts..."
-              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl pl-9 pr-8 py-2 text-sm text-white placeholder-[#555] focus:outline-none focus:border-[#333] transition-colors"
+              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl pl-8 pr-8 py-2 text-sm text-white placeholder-[#555] focus:outline-none focus:border-[#333] transition-colors"
             />
             {searchTerm && (
-              <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555] hover:text-white">
-                <X className="w-3.5 h-3.5" />
+              <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555] hover:text-white text-base leading-none font-bold">
+                ×
               </button>
             )}
           </div>
@@ -240,8 +351,8 @@ const Index = () => {
           </div>
 
           {/* Refresh */}
-          <button onClick={refetch} className="action-btn p-2" title="Refresh">
-            <RefreshCw className="w-4 h-4" />
+          <button onClick={refetch} className="action-btn p-2 text-xs font-semibold tracking-wide" title="Refresh">
+            ↺
           </button>
         </div>
 
@@ -279,9 +390,16 @@ const Index = () => {
                         👤
                       </div>
                       <div>
-                        <p className="text-[13px] font-semibold text-[#ccc]">
-                          anon #{post.id.slice(-6)}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-[13px] font-semibold text-[#ccc]">
+                            anon #{post.id.slice(-6)}
+                          </p>
+                          {post.building_flair && (
+                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-white/10 text-white flex items-center gap-1">
+                              {post.building_flair}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[11px] text-[#555] flex items-center gap-1">
                           {timeAgo(post.created_at)}
                           <span className="text-[#333]">·</span>
@@ -291,10 +409,10 @@ const Index = () => {
                     </div>
                     <button
                       onClick={() => handleReport(post.id)}
-                      className="action-btn p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="action-btn p-1.5 text-xs font-medium text-[#444] hover:text-[#ff2d55]"
                       title="Report"
                     >
-                      <Flag className="w-3.5 h-3.5" />
+                      Report
                     </button>
                   </div>
 
@@ -319,13 +437,30 @@ const Index = () => {
                   {/* ── Image ── */}
                   {post.image_url && (
                     <div className="px-4 pb-3">
-                      {post.image_context && (
-                        <p className="text-xs text-[#777] mb-2 italic">{post.image_context}</p>
+                      {post.image_self_destruct ? (
+                         <SelfDestructImage src={post.image_url} alt="Confession" context={post.image_context} />
+                      ) : (
+                        <>
+                          {post.image_context && (
+                            <p className="text-xs text-[#777] mb-2 italic">{post.image_context}</p>
+                          )}
+                          <img
+                            src={post.image_url}
+                            alt="Post"
+                            className="w-full rounded-xl object-cover max-h-80"
+                          />
+                        </>
                       )}
-                      <img
-                        src={post.image_url}
-                        alt="Post"
-                        className="w-full rounded-xl object-cover max-h-80"
+                    </div>
+                  )}
+
+                  {/* ── Poll ── */}
+                  {post.poll && (
+                    <div className="px-4 pb-2">
+                      <PollCard 
+                        poll={post.poll} 
+                        onVote={(optId) => votePoll(post.id, optId)}
+                        hasVotedId={JSON.parse(localStorage.getItem('votedPolls') || '{}')[post.id]}
                       />
                     </div>
                   )}
@@ -358,37 +493,37 @@ const Index = () => {
                     {/* Upvote */}
                     <button
                       onClick={() => handleVote(post.id, 'up')}
-                      className={`action-btn ${votes?.upvoted ? 'active text-[#ff2d55]' : ''}`}
+                      className={`action-btn text-xs font-semibold ${votes?.upvoted ? 'active text-[#ff2d55]' : ''}`}
                     >
-                      <ArrowUp className="w-4 h-4" />
+                      <span className="text-base leading-none">↑</span>
                       <span className="text-xs">{post.upvotes}</span>
                     </button>
 
                     {/* Downvote */}
                     <button
                       onClick={() => handleVote(post.id, 'down')}
-                      className={`action-btn ${votes?.downvoted ? 'active text-[#7c3aed]' : ''}`}
+                      className={`action-btn text-xs font-semibold ${votes?.downvoted ? 'active text-[#7c3aed]' : ''}`}
                     >
-                      <ArrowDown className="w-4 h-4" />
+                      <span className="text-base leading-none">↓</span>
                       <span className="text-xs">{post.downvotes}</span>
                     </button>
 
                     {/* Comments */}
                     <button
                       onClick={() => toggleComments(post.id)}
-                      className={`action-btn ${commentsOpen ? 'text-white' : ''}`}
+                      className={`action-btn text-xs font-semibold ${commentsOpen ? 'text-white' : ''}`}
                     >
-                      <MessageCircle className="w-4 h-4" />
+                      <span className="text-sm leading-none">&#x1F4AC;</span>
                       <span className="text-xs">{post.comments.length}</span>
                     </button>
 
                     {/* Report */}
                     <button
                       onClick={() => handleReport(post.id)}
-                      className="action-btn ml-auto"
+                      className="action-btn ml-auto text-xs font-medium text-[#444] hover:text-[#ff2d55]"
                       title="Report"
                     >
-                      <Flag className="w-3.5 h-3.5" />
+                      Report
                     </button>
                   </div>
 
