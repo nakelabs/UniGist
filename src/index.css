@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -81,19 +82,19 @@
 @layer components {
   /* ── Cards ─────────────────────────────────── */
   .post-card {
-    @apply bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl overflow-hidden
+    @apply bg-[#1a1a1a]/40 backdrop-blur-xl border border-white/5 rounded-[20px] overflow-hidden
            transition-all duration-300;
   }
 
   .post-card:hover {
-    border-color: #333;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
   }
 
   /* retro-card alias used by PostItem */
   .retro-card {
-    @apply bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl overflow-hidden p-4
+    @apply bg-[#1a1a1a]/40 backdrop-blur-xl border border-white/5 rounded-[20px] overflow-hidden p-5
            transition-all duration-300;
   }
 
@@ -124,7 +125,7 @@
 
   .sort-tab:hover {
     color: white;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.05);
   }
 
   .sort-tab.active {
@@ -132,17 +133,18 @@
     color: white;
   }
 
-  /* ── Gradient brand button ──────────────────── */
+  /* ── Brand button ──────────────────────────── */
   .btn-brand {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl
-           font-semibold text-sm text-white transition-all duration-200
-           active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none;
-    background: linear-gradient(135deg, #ff2d55, #7c3aed);
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-[16px]
+           font-semibold text-sm text-white transition-all duration-300
+           active:scale-[0.95] disabled:opacity-40 disabled:pointer-events-none;
+    background: #ff2d55;
   }
 
   .btn-brand:hover {
-    opacity: 0.9;
-    box-shadow: 0 0 24px rgba(255, 45, 85, 0.3);
+    background: #ff3b60;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(255, 45, 85, 0.35);
   }
 
   /* ── Ghost button ───────────────────────────── */
@@ -155,10 +157,10 @@
 
   /* ── Textarea / input ───────────────────────── */
   .field {
-    @apply w-full bg-[#1e1e1e] border border-[#2a2a2a] rounded-xl px-4 py-3
+    @apply w-full bg-[#1e1e1e]/40 backdrop-blur-md border border-white/5 rounded-[16px] px-5 py-4
            text-[15px] text-white placeholder-[#555]
            focus:outline-none focus:border-[#ff2d55]/60 focus:ring-1 focus:ring-[#ff2d55]/30
-           transition-all duration-200 resize-none;
+           transition-all duration-300 resize-none;
   }
 
   /* ── Divider ────────────────────────────────── */

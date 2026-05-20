@@ -95,7 +95,7 @@ const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 p-4">
       <div className="retro-card max-w-4xl max-h-[90vh] overflow-y-auto p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-pixel text-retro-cyber-yellow">📜 Terms and Conditions</h2>
+          <h2 className="text-2xl font-pixel text-retro-cyber-yellow">Terms and Conditions</h2>
           {alreadyAccepted && onClose && (
             <button 
               onClick={onClose}
@@ -110,18 +110,18 @@ const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({
         
         <div className="text-retro-pastel-blue font-cyber mb-6">
           <p className="mb-4">
-            Welcome to UniGist. By accessing or using this website, you agree to comply with and be bound by the following Terms and Conditions. 
+            Welcome to Yarnz. By accessing or using this website, you agree to comply with and be bound by the following Terms and Conditions. 
             If you do not agree to these terms, you must refrain from using the service.
           </p>
           
-          <h3 className="font-pixel text-retro-hot-pink mt-4 mb-2">1. 🕶️ Anonymity and User Responsibility</h3>
+          <h3 className="font-pixel text-retro-hot-pink mt-4 mb-2">1. Anonymity and User Responsibility</h3>
           <ul className="list-disc pl-5 space-y-2">
             <li>While the platform permits anonymous submissions, all users remain fully responsible for the content they post.</li>
             <li>Users shall not use anonymity as a means to engage in unlawful, harmful, or malicious conduct.</li>
             <li>The platform reserves the right to remove or moderate any content that violates these terms or applicable laws, without prior notice.</li>
           </ul>
           
-          <h3 className="font-pixel text-retro-hot-pink mt-4 mb-2">2. 🚫 Prohibited Content</h3>
+          <h3 className="font-pixel text-retro-hot-pink mt-4 mb-2">2. Prohibited Content</h3>
           <p>Users are strictly prohibited from posting, uploading, or sharing any of the following:</p>
           <ul className="list-disc pl-5 space-y-2">
             <li>Hate speech, discriminatory remarks, or harassment directed at individuals or groups;</li>
@@ -132,32 +132,32 @@ const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({
             <li>Any media or content that infringes upon the intellectual property rights of third parties.</li>
           </ul>
           
-          <h3 className="font-pixel text-retro-hot-pink mt-4 mb-2">3. 🔊 User-Generated Media</h3>
+          <h3 className="font-pixel text-retro-hot-pink mt-4 mb-2">3. User-Generated Media</h3>
           <ul className="list-disc pl-5 space-y-2">
             <li>Users may submit text, images, audio, and video content in accordance with these terms.</li>
             <li>Users must ensure that all submitted content is original, or that they hold the necessary rights and permissions for its use and publication.</li>
           </ul>
           
-          <h3 className="font-pixel text-retro-hot-pink mt-4 mb-2">4. 👮 Moderation and Enforcement</h3>
+          <h3 className="font-pixel text-retro-hot-pink mt-4 mb-2">4. Moderation and Enforcement</h3>
           <ul className="list-disc pl-5 space-y-2">
             <li>The platform administrators reserve the right to review, edit, delete, or otherwise moderate content at their discretion.</li>
             <li>Users who repeatedly violate these Terms and Conditions may be permanently banned, including by means of IP address restriction.</li>
             <li>The platform may cooperate with legal authorities if content violates local, national, or international laws.</li>
           </ul>
           
-          <h3 className="font-pixel text-retro-hot-pink mt-4 mb-2">5. 📢 Reporting and Feedback</h3>
+          <h3 className="font-pixel text-retro-hot-pink mt-4 mb-2">5. Reporting and Feedback</h3>
           <ul className="list-disc pl-5 space-y-2">
-            <li>Users are encouraged to report content that violates these Terms using the platform's designated reporting mechanism (🚩).</li>
+            <li>Users are encouraged to report content that violates these Terms using the platform's designated reporting mechanism.</li>
             <li>Feedback, questions, or suggestions may be submitted via email at support@unigist.com.</li>
           </ul>
           
-          <h3 className="font-pixel text-retro-hot-pink mt-4 mb-2">6. 🛠️ Modifications to Terms</h3>
+          <h3 className="font-pixel text-retro-hot-pink mt-4 mb-2">6. Modifications to Terms</h3>
           <ul className="list-disc pl-5 space-y-2">
             <li>These Terms and Conditions may be amended at any time without prior notice.</li>
             <li>Continued use of the platform following any such changes shall constitute acceptance of the revised Terms.</li>
           </ul>
           
-          <h3 className="font-pixel text-retro-hot-pink mt-4 mb-2">7. ⚖️ Legal Disclaimer</h3>
+          <h3 className="font-pixel text-retro-hot-pink mt-4 mb-2">7. Legal Disclaimer</h3>
           <ul className="list-disc pl-5 space-y-2">
             <li>The platform, its administrators, and its affiliates disclaim all liability for user-generated content.</li>
             <li>The platform operates independently and does not endorse or verify any content posted by users.</li>
@@ -165,7 +165,7 @@ const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({
           </ul>
           
           <p className="mt-6 text-retro-cyber-yellow">
-            By using UniGist, you affirm that you have read, understood, and agreed to these Terms and Conditions.
+            By using Yarnz, you affirm that you have read, understood, and agreed to these Terms and Conditions.
           </p>
         </div>
         

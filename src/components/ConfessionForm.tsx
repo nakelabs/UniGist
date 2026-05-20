@@ -18,7 +18,7 @@ interface ConfessionFormProps {
 }
 
 const SUGGESTED_TAGS = ['university', 'relationships', 'work', 'family', 'secrets', 'funny'];
-const BUILDING_FLAIRS = ['📍 Main Library', '📍 Freshman Dorms', '📍 Science Block', '📍 Cafeteria', '📍 Student Union', '📍 Gym'];
+const BUILDING_FLAIRS = ['Main Library', 'Freshman Dorms', 'Science Block', 'Cafeteria', 'Student Union', 'Gym'];
 
 const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
   const [content, setContent] = useState('');
@@ -113,10 +113,10 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
   const canPost = (content.trim().length > 0 || !!imageUrl) && !isSubmitting && !isUploading;
 
   return (
-    <div className="post-card mb-2 animate-fade-up">
+    <div className="mb-4 animate-fade-up">
       <form onSubmit={handleSubmit}>
         {/* Text area */}
-        <div className="px-4 pt-4 pb-2">
+        <div className="pt-2 pb-2">
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
@@ -135,7 +135,7 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
 
         {/* Image section */}
         {showImageSection && (
-          <div className="px-4 pb-3 animate-fade-in">
+          <div className="pb-3 animate-fade-in">
             <ImageUploader
               imageUrl={imageUrl}
               setImageUrl={setImageUrl}
@@ -179,7 +179,7 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
 
         {/* Tag section */}
         {showTagSection && (
-          <div className="px-4 pb-3 animate-fade-in space-y-2">
+          <div className="pb-3 animate-fade-in space-y-2">
             <div className="flex gap-2">
               <input
                 type="text"
@@ -233,7 +233,7 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
 
         {/* Flair section */}
         {showFlairSection && (
-          <div className="px-4 pb-3 animate-fade-in">
+          <div className="pb-3 animate-fade-in space-y-3">
             <p className="text-xs text-[#888] mb-2 uppercase tracking-wider font-semibold">Campus Location</p>
             <div className="flex flex-wrap gap-1.5">
               {BUILDING_FLAIRS.map((f) => (
@@ -252,7 +252,7 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
 
         {/* Poll section */}
         {showPollSection && (
-          <div className="px-4 pb-3 animate-fade-in space-y-3">
+          <div className="pb-3 animate-fade-in space-y-3">
             <p className="text-xs text-[#888] uppercase tracking-wider font-semibold">Anonymous Poll</p>
             <input
               type="text"
@@ -302,8 +302,7 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
         )}
 
         {/* Bottom toolbar */}
-        <div className="divider" />
-        <div className="px-4 py-2 flex items-center justify-between">
+        <div className="py-2 flex items-center justify-between">
           {/* Media / tag toggles */}
           <div className="flex items-center gap-1">
             <button
@@ -354,10 +353,10 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
             ) : isSubmitting ? (
               <span className="flex items-center gap-2">
                 <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Posting
+                Yarning
               </span>
             ) : (
-              <span>Post</span>
+              <span>Yarn it</span>
             )}
           </button>
         </div>

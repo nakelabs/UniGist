@@ -144,13 +144,11 @@ const PostItem = ({
             onClick={() => onToggleComments(post.id)}
             className="flex items-center space-x-1 text-retro-electric-blue hover:text-retro-cyber-yellow transition-colors group"
           >
-            <span className="text-sm leading-none">⧁</span>
-            <span className="font-cyber text-sm">{post.comments.length}</span>
+            <span className="font-cyber text-sm">{post.comments.length} replies</span>
           </button>
         </div>
 
         <div className="flex items-center space-x-1 text-retro-electric-blue">
-          <span className="text-sm leading-none">♥</span>
           <span className="font-cyber text-sm">
             {post.upvotes - post.downvotes} vibes
           </span>

@@ -5,24 +5,18 @@ const PageHeader = () => {
         {/* Wordmark */}
         <div className="flex items-center gap-2">
           <span
-            className="text-xl font-bold tracking-tight"
-            style={{
-              background: 'linear-gradient(135deg, #ff2d55, #7c3aed)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
+            className="text-2xl tracking-tight"
+            style={{ fontFamily: "'Pacifico', cursive" }}
           >
-            UniGist
+            <span style={{ color: '#ff2d55' }}>Y</span>
+            <span style={{ color: '#7c3aed' }}>a</span>
+            <span style={{ color: '#00c853' }}>r</span>
+            <span style={{ color: '#ff9100' }}>n</span>
+            <span style={{ color: '#00e5ff' }}>z</span>
           </span>
           <span className="text-[10px] font-semibold text-[#555] uppercase tracking-widest mt-0.5">
             anonymous
           </span>
-        </div>
-
-        {/* Ghost badge */}
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1e1e1e] border border-[#2a2a2a]">
-          <span className="text-sm">👻</span>
-          <span className="text-xs font-medium text-[#777]">24h feed</span>
         </div>
       </div>
     </header>

@@ -141,7 +141,6 @@ function SelfDestructImage({ src, alt, context }: { src: string; alt: string; co
   if (destroyed) {
     return (
       <div className="w-full h-48 bg-[#1a1a1a] border border-[#333] rounded-xl flex flex-col items-center justify-center text-[#555]">
-        <span className="text-3xl mb-2 opacity-40">&#x2715;</span>
         <span className="text-sm font-medium">Image self-destructed</span>
       </div>
     );
@@ -237,6 +236,7 @@ function PollCard({
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [showCompose, setShowCompose] = useState(true);
   const [sortBy, setSortBy] = useState<'newest' | 'top' | 'controversial'>('newest');
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportingId, setReportingId] = useState<string | null>(null);
@@ -316,19 +316,37 @@ const Index = () => {
       <main className="max-w-[680px] mx-auto px-4 py-4 space-y-3">
 
         {/* ── Compose box ── */}
-        <ConfessionForm onSubmit={handleSubmit} />
+        {showCompose ? (
+          <div className="relative animate-fade-in">
+            <button 
+              onClick={() => setShowCompose(false)} 
+              className="absolute -right-2 -top-2 w-8 h-8 flex items-center justify-center text-[#555] hover:text-[#ff2d55] bg-[#111] hover:bg-[#222] rounded-full text-xl z-10 transition-colors"
+              title="Hide form"
+            >
+              ×
+            </button>
+            <ConfessionForm onSubmit={handleSubmit} />
+          </div>
+        ) : (
+          <button 
+            onClick={() => setShowCompose(true)}
+            className="w-full bg-[#1e1e1e]/40 backdrop-blur-md border border-white/5 rounded-[16px] px-5 py-4 text-left text-[#555] hover:border-white/20 transition-all duration-300 flex items-center justify-between group mb-4"
+          >
+            <span>Share something anonymously...</span>
+            <span className="text-[#ff2d55] opacity-0 group-hover:opacity-100 transition-opacity font-semibold">Yarn it</span>
+          </button>
+        )}
 
         {/* ── Filter bar ── */}
         <div className="flex items-center gap-2 py-1">
           {/* Search */}
           <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555] text-xs select-none">&#9906;</span>
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search posts..."
-              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl pl-8 pr-8 py-2 text-sm text-white placeholder-[#555] focus:outline-none focus:border-[#333] transition-colors"
+              placeholder="Search yarns..."
+              className="w-full bg-[#1e1e1e]/40 backdrop-blur-md border border-white/5 rounded-[16px] pl-4 pr-8 py-2 text-sm text-white placeholder-[#555] focus:outline-none focus:border-white/20 transition-all duration-300"
             />
             {searchTerm && (
               <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555] hover:text-white text-base leading-none font-bold">
@@ -338,14 +356,14 @@ const Index = () => {
           </div>
 
           {/* Sort tabs */}
-          <div className="flex items-center gap-0.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-1">
+          <div className="flex items-center gap-0.5 bg-[#1e1e1e]/40 backdrop-blur-md border border-white/5 rounded-[16px] p-1">
             {(['newest', 'top', 'controversial'] as const).map((s) => (
               <button
                 key={s}
                 onClick={() => setSortBy(s)}
                 className={`sort-tab text-xs capitalize px-3 py-1 ${sortBy === s ? 'active' : ''}`}
               >
-                {s === 'newest' ? '🕐' : s === 'top' ? '🔥' : '💥'}
+                {s === 'newest' ? 'New' : s === 'top' ? 'Top' : 'Hot'}
               </button>
             ))}
           </div>
@@ -365,9 +383,8 @@ const Index = () => {
           </div>
         ) : feed.length === 0 ? (
           <div className="py-20 text-center">
-            <div className="text-4xl mb-3">👻</div>
             <p className="text-[#555] font-medium">
-              {searchTerm ? `No posts matching "${searchTerm}"` : 'Nothing here yet — be the first!'}
+              {searchTerm ? `No posts matching "${searchTerm}"` : "What's the yarn?"}
             </p>
             {searchTerm && (
               <button onClick={() => setSearchTerm('')} className="mt-4 btn-ghost text-xs">
@@ -386,9 +403,7 @@ const Index = () => {
                   {/* ── Post header ── */}
                   <div className="flex items-center justify-between px-4 pt-3 pb-2">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#ff2d55] to-[#7c3aed] flex items-center justify-center text-sm flex-shrink-0">
-                        👤
-                      </div>
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#ff2d55] to-[#7c3aed] flex-shrink-0" />
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="text-[13px] font-semibold text-[#ccc]">
@@ -513,8 +528,7 @@ const Index = () => {
                       onClick={() => toggleComments(post.id)}
                       className={`action-btn text-xs font-semibold ${commentsOpen ? 'text-white' : ''}`}
                     >
-                      <span className="text-sm leading-none">&#x1F4AC;</span>
-                      <span className="text-xs">{post.comments.length}</span>
+                      <span className="text-xs">{post.comments.length} replies</span>
                     </button>
 
                     {/* Report */}

@@ -114,7 +114,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, onSubmit, po
           <div className="flex items-start gap-2 mb-4">
             <span className="text-retro-cyber-yellow font-bold text-xs mt-0.5">!</span>
             <p className="font-cyber text-sm text-retro-pastel-blue">
-              Help us keep UniGist safe by reporting content that violates our community guidelines.
+              Help us keep Yarnz safe by reporting content that violates our community guidelines.
             </p>
           </div>
         </div>
@@ -144,7 +144,6 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, onSubmit, po
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm">{reason.icon}</span>
                     <span className="font-cyber text-sm text-retro-neon-green font-semibold">
                       {reason.label}
                     </span>

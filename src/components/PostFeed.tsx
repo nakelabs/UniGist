@@ -139,18 +139,17 @@ const PostFeed = ({
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex flex-col gap-4 mb-8">
         <h2 className="font-pixel text-xl text-center text-retro-neon-green animate-glow">
-          🔥 THE CONFESSION FEED 🔥
+          THE CONFESSION FEED
         </h2>
         
         {/* Search Bar */}
         <div className="relative">
-          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-retro-electric-blue text-xs select-none">&#9906;</span>
           <input
             type="text"
             placeholder="Search confessions or tags..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-8 pr-4 py-2 bg-gray-900/50 border border-retro-electric-blue/30 rounded text-retro-neon-green font-cyber text-sm focus:outline-none focus:border-retro-cyber-yellow"
+            className="w-full pl-4 pr-4 py-2 bg-gray-900/50 border border-retro-electric-blue/30 rounded text-retro-neon-green font-cyber text-sm focus:outline-none focus:border-retro-cyber-yellow"
           />
           {searchTerm && (
             <button
@@ -227,7 +226,7 @@ const PostFeed = ({
                     : 'bg-transparent text-retro-hot-pink border-retro-hot-pink hover:bg-retro-hot-pink hover:text-black'
                 }`}
               >
-                🔥 Hot
+                Hot
               </button>
             </div>
           </div>
@@ -269,7 +268,7 @@ const PostFeed = ({
       {getFilteredPosts().length === 0 && posts.length > 0 && (
         <div className="text-center py-12">
           <div className="text-retro-electric-blue font-cyber text-lg mb-2">
-            No confessions found 🔍
+            No confessions found
           </div>
           <div className="text-retro-neon-green font-cyber text-sm mb-4">
             {searchTerm && `No results for "${searchTerm}"`}
@@ -290,10 +289,10 @@ const PostFeed = ({
       {posts.length === 0 && (
         <div className="text-center py-12">
           <div className="text-retro-electric-blue font-cyber text-lg mb-2">
-            No confessions yet... 👻
+            What's the yarn?
           </div>
           <div className="text-retro-neon-green font-cyber text-sm">
-            Be the first to share your secret!
+            Be the first to share!
           </div>
         </div>
       )}
