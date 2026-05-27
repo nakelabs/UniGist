@@ -4,9 +4,12 @@ interface ConfessionFormProps {
   onSubmit: (confession: {
     content: string;
     imageFile?: File;
+    audioFile?: File;
     tags?: string[];
   }) => Promise<void>;
 }
+
+import AudioRecorder from './AudioRecorder';
 
 const SUGGESTED_TAGS = ['university', 'relationships', 'work', 'family', 'secrets', 'funny'];
 
@@ -17,8 +20,12 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
   const [showTagSection, setShowTagSection] = useState(false);
+  const [showAudioRecorder, setShowAudioRecorder] = useState(false);
 
   const MAX_CHARS = 500;
   const remaining = MAX_CHARS - content.length;
@@ -44,16 +51,27 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
     setImageUrl(URL.createObjectURL(file));
   };
 
+  const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith('audio/')) return;
+
+    setAudioFile(file);
+    setAudioUrl(URL.createObjectURL(file));
+  };
+
   // ── Submit ───────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim() && !imageFile) return;
+    if (!content.trim() && !imageFile && !audioFile && !audioBlob) return;
 
     setIsSubmitting(true);
     try {
+      const audioToSubmit = audioFile || (audioBlob ? new File([audioBlob], 'recording.webm', { type: audioBlob.type }) : undefined);
+      
       await onSubmit({
         content,
         imageFile: imageFile || undefined,
+        audioFile: audioToSubmit,
         tags,
       });
       setContent('');
@@ -61,7 +79,11 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
       setCurrentTag('');
       setImageFile(null);
       setImageUrl(null);
+      setAudioFile(null);
+      setAudioBlob(null);
+      setAudioUrl(null);
       setShowTagSection(false);
+      setShowAudioRecorder(false);
     } catch (err) {
       console.error('Error submitting confession:', err);
     } finally {
@@ -69,7 +91,7 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
     }
   };
 
-  const canPost = (content.trim().length > 0 || !!imageFile) && !isSubmitting;
+  const canPost = (content.trim().length > 0 || !!imageFile || !!audioFile || !!audioBlob) && !isSubmitting;
 
   return (
     <div className="mb-4 animate-fade-up">
@@ -164,6 +186,18 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
           </div>
         )}
 
+        {/* Audio Recorder section */}
+        {showAudioRecorder && (
+          <div className="mb-3">
+            <AudioRecorder
+              audioUrl={audioUrl}
+              setAudioUrl={setAudioUrl}
+              setAudioBlob={setAudioBlob}
+              handleFileUpload={handleAudioUpload}
+            />
+          </div>
+        )}
+
         {/* File input (hidden) */}
         <input 
           type="file" 
@@ -184,6 +218,14 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
             >
               Photo
             </label>
+            <button
+              type="button"
+              onClick={() => setShowAudioRecorder(!showAudioRecorder)}
+              className={`action-btn text-xs font-semibold tracking-wide ${showAudioRecorder || audioUrl ? 'text-[#0ea5e9]' : ''}`}
+              title="Add audio"
+            >
+              Audio
+            </button>
             <button
               type="button"
               onClick={() => setShowTagSection(!showTagSection)}

@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { uploadFile } from '@/lib/fileUpload';
+import { Mic, Square, Upload, Loader2 } from 'lucide-react';
 
 interface AudioRecorderProps {
   audioUrl: string | null;
@@ -100,14 +101,34 @@ const AudioRecorder = ({ audioUrl, setAudioUrl, setAudioBlob, handleFileUpload, 
         <button
           type="button"
           onClick={isRecording ? handleStopRecording : handleStartRecording}
-          className={`retro-button flex items-center ${isRecording ? 'bg-retro-hot-pink animate-pulse' : ''}`}
+          className={`retro-button flex items-center gap-2 ${isRecording ? 'bg-retro-hot-pink animate-pulse' : ''}`}
           disabled={isUploadingRecording}
         >
-          {isRecording ? 'STOP RECORDING' : isUploadingRecording ? 'UPLOADING...' : 'RECORD AUDIO'}
+          {isRecording ? (
+            <>
+              <Square size={16} /> STOP RECORDING
+            </>
+          ) : isUploadingRecording ? (
+            <>
+              <Loader2 size={16} className="animate-spin" /> UPLOADING...
+            </>
+          ) : (
+            <>
+              <Mic size={16} /> RECORD AUDIO
+            </>
+          )}
         </button>
         
-        <label className={`retro-button flex items-center cursor-pointer ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-          {isUploading ? 'UPLOADING...' : 'UPLOAD AUDIO'}
+        <label className={`retro-button flex items-center gap-2 cursor-pointer ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+          {isUploading ? (
+            <>
+              <Loader2 size={16} className="animate-spin" /> UPLOADING...
+            </>
+          ) : (
+            <>
+              <Upload size={16} /> UPLOAD AUDIO
+            </>
+          )}
           <input
             type="file"
             accept="audio/*"

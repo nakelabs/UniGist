@@ -151,6 +151,7 @@ const Index = () => {
   const handleSubmit = async (data: {
     content: string; 
     imageFile?: File;
+    audioFile?: File;
     tags?: string[]; 
   }) => {
     try { await createConfession(data); } catch { /* toast handled inside hook */ }
