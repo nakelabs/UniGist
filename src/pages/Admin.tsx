@@ -34,7 +34,7 @@ interface ReportWithContent {
 export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
-  const { reports, updateReportStatus, deleteContent, refetch: refetchReports } = useReports();
+  const { reports, updateReportStatus, deleteContent, refetch: refetchReports } = useReports({ autoFetch: isAuthenticated });
   const [reportsWithContent, setReportsWithContent] = useState<ReportWithContent[]>([]);
   const [stats, setStats] = useState<AdminStats>({
     totalPosts: 0,

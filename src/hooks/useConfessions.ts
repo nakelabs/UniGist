@@ -1,16 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { api, Confession, Comment } from '@/lib/api';
+import { api, Confession, Comment, PaginatedConfessionsResponse } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
 export interface ConfessionWithComments extends Confession {
   comments: Comment[];
   showComments: boolean;
   isNew: boolean;
-}
-
-interface ConfessionsAndComments {
-  confessions: Confession[];
-  comments: Comment[];
 }
 
 export const useConfessions = () => {
@@ -25,7 +20,7 @@ export const useConfessions = () => {
       setLoading(true);
 
       // GET /confessions returns { confessions, comments } pre-joined
-      const data = await api.get<ConfessionsAndComments>('/confessions');
+      const data = await api.get<PaginatedConfessionsResponse>('/confessions');
 
       const confessionsData = data.confessions ?? [];
       const commentsData = data.comments ?? [];
@@ -38,7 +33,7 @@ export const useConfessions = () => {
         if (!acc[comment.confession_id]) acc[comment.confession_id] = [];
         acc[comment.confession_id].push(comment);
         return acc;
-      }, {} as Record<string, Comment[]>);
+      }, {} as Record<number, Comment[]>);
 
       const confessionsWithComments: ConfessionWithComments[] =
         confessionsData.map((confession) => ({
@@ -64,29 +59,30 @@ export const useConfessions = () => {
 
   const createConfession = async (confessionData: {
     content: string;
-    audioUrl?: string;
-    videoUrl?: string;
-    videoContext?: string;
-    imageUrl?: string;
-    imageContext?: string;
-    imageSelfDestruct?: boolean;
+    audioFile?: File;
+    videoFile?: File;
+    imageFile?: File;
     tags?: string[];
-    buildingFlair?: string;
-    poll?: { question: string; options: string[] };
   }) => {
     try {
-      const data = await api.post<Confession>('/confessions', {
-        content: confessionData.content,
-        audio_url: confessionData.audioUrl,
-        video_url: confessionData.videoUrl,
-        video_context: confessionData.videoContext,
-        image_url: confessionData.imageUrl,
-        image_context: confessionData.imageContext,
-        image_self_destruct: confessionData.imageSelfDestruct,
-        building_flair: confessionData.buildingFlair,
-        poll: confessionData.poll,
-        tags: confessionData.tags ?? [],
-      });
+      const formData = new FormData();
+      if (confessionData.content) {
+        formData.append('text_content', confessionData.content);
+      }
+      if (confessionData.audioFile) {
+        formData.append('audio_file', confessionData.audioFile);
+      }
+      if (confessionData.videoFile) {
+        formData.append('video_file', confessionData.videoFile);
+      }
+      if (confessionData.imageFile) {
+        formData.append('image_file', confessionData.imageFile);
+      }
+      if (confessionData.tags && confessionData.tags.length > 0) {
+        formData.append('tags', confessionData.tags.join(','));
+      }
+
+      const data = await api.postFormData<Confession>('/confessions', formData);
 
       const newConfession: ConfessionWithComments = {
         ...data,
@@ -115,7 +111,7 @@ export const useConfessions = () => {
   };
 
   const addComment = async (
-    confessionId: string,
+    confessionId: number,
     content: string,
     isAnonymous: boolean = true
   ) => {
@@ -158,7 +154,7 @@ export const useConfessions = () => {
     }
   };
 
-  const toggleComments = (confessionId: string) => {
+  const toggleComments = (confessionId: number) => {
     setConfessions((prev) =>
       prev.map((confession) =>
         confession.id === confessionId
@@ -169,81 +165,21 @@ export const useConfessions = () => {
   };
 
   const updateVoteCount = (
-    confessionId: string,
-    type: 'up' | 'down',
-    wasVoted: boolean,
-    hadOppositeVote: boolean
+    confessionId: number,
+    newLikesCount: number
   ) => {
     setConfessions((prev) =>
       prev.map((confession) => {
         if (confession.id !== confessionId) return confession;
-
-        let newUpvotes = confession.upvotes || 0;
-        let newDownvotes = confession.downvotes || 0;
-
-        if (type === 'up') {
-          if (wasVoted) {
-            newUpvotes = Math.max(0, newUpvotes - 1);
-          } else {
-            newUpvotes += 1;
-            if (hadOppositeVote) newDownvotes = Math.max(0, newDownvotes - 1);
-          }
-        } else {
-          if (wasVoted) {
-            newDownvotes = Math.max(0, newDownvotes - 1);
-          } else {
-            newDownvotes += 1;
-            if (hadOppositeVote) newUpvotes = Math.max(0, newUpvotes - 1);
-          }
-        }
-
-        return { ...confession, upvotes: newUpvotes, downvotes: newDownvotes };
+        return { ...confession, likes_count: newLikesCount };
       })
     );
-  };
-
-  const votePoll = async (confessionId: string, optionId: string) => {
-    try {
-      // Optimistic update
-      setConfessions((prev) =>
-        prev.map((confession) => {
-          if (confession.id !== confessionId || !confession.poll) return confession;
-          
-          return {
-            ...confession,
-            poll: {
-              ...confession.poll,
-              options: confession.poll.options.map(opt => 
-                opt.id === optionId ? { ...opt, votes: opt.votes + 1 } : opt
-              )
-            }
-          };
-        })
-      );
-
-      await api.post(`/confessions/${confessionId}/poll-vote`, { optionId });
-      
-      // Store in local storage to prevent multi-voting
-      const votedPolls = JSON.parse(localStorage.getItem('votedPolls') || '{}');
-      votedPolls[confessionId] = optionId;
-      localStorage.setItem('votedPolls', JSON.stringify(votedPolls));
-
-    } catch (error) {
-      console.error('Error voting on poll:', error);
-      toast({
-        title: 'Error voting',
-        description: 'Could not submit your vote.',
-        variant: 'destructive',
-      });
-      // Revert optimistic update by refetching
-      fetchConfessions();
-    }
   };
 
   useEffect(() => {
     fetchConfessions();
 
-    // Poll every 30 seconds (replaces Supabase real-time subscriptions)
+    // Poll every 30 seconds
     pollRef.current = setInterval(fetchConfessions, 30_000);
 
     const handleForceRefresh = () => {
@@ -265,7 +201,6 @@ export const useConfessions = () => {
     addComment,
     toggleComments,
     updateVoteCount,
-    votePoll,
     refetch: fetchConfessions,
   };
 };

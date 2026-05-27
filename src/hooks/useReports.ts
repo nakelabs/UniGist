@@ -2,9 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { api, Report } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
-export const useReports = () => {
+interface UseReportsOptions {
+  autoFetch?: boolean;
+}
+
+export const useReports = ({ autoFetch = false }: UseReportsOptions = {}) => {
   const [reports, setReports] = useState<Report[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(autoFetch);
   const { toast } = useToast();
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -128,6 +132,8 @@ export const useReports = () => {
   };
 
   useEffect(() => {
+    if (!autoFetch) return;
+
     fetchReports();
 
     // Poll every 15 seconds (replaces Supabase real-time channel)
@@ -136,7 +142,7 @@ export const useReports = () => {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, []);
+  }, [autoFetch]);
 
   return {
     reports,

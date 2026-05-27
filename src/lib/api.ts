@@ -1,6 +1,6 @@
 // Central API client — points at your FastAPI backend.
 // Change this URL when deploying to production.
-const BASE_URL = 'http://localhost:8000';
+const BASE_URL = 'https://yarnz-b.onrender.com';
 
 async function request<T>(
   path: string,
@@ -36,61 +36,68 @@ export const api = {
       method: 'DELETE',
       ...(body ? { body: JSON.stringify(body) } : {}),
     }),
+  postFormData: async <T>(path: string, formData: FormData): Promise<T> => {
+    const res = await fetch(`${BASE_URL}${path}`, {
+      method: 'POST',
+      body: formData,
+      // Note: do not set Content-Type header when sending FormData
+      // fetch will automatically set it to multipart/form-data with the correct boundary
+    });
+    if (!res.ok) {
+      const errorBody = await res.text();
+      throw new Error(`API error ${res.status}: ${errorBody}`);
+    }
+    return res.json() as Promise<T>;
+  }
 };
 
-// ─── Database types (unchanged) ──────────────────────────────────────────────
+// ─── Database types ──────────────────────────────────────────────
 
 export interface Confession {
-  id: string;
-  content: string;
-  audio_url?: string;
-  video_url?: string;
-  video_context?: string;
-  image_url?: string;
-  image_context?: string;
-  image_self_destruct?: boolean;
-  building_flair?: string;
-  poll?: {
-    question: string;
-    options: { id: string; text: string; votes: number }[];
-  };
+  id: number;
+  text_content?: string | null;
+  audio_url?: string | null;
+  video_url?: string | null;
+  image_url?: string | null;
+  media_type?: 'text' | 'audio' | 'video' | 'image' | null;
+  caption?: string | null;
   tags: string[];
-  upvotes: number;
-  downvotes: number;
+  likes_count: number;
   created_at: string;
   updated_at: string;
 }
 
 export interface Comment {
-  id: string;
-  confession_id: string;
+  id: number;
+  confession_id: number;
   content: string;
-  upvotes: number;
-  downvotes: number;
   is_anonymous: boolean;
-  username?: string;
+  username?: string | null;
   created_at: string;
   updated_at: string;
 }
 
-export interface Vote {
-  id: string;
-  user_fingerprint: string;
-  target_type: 'confession' | 'comment';
-  target_id: string;
-  vote_type: 'up' | 'down';
-  created_at: string;
+export interface PaginatedConfessionsResponse {
+  confessions: Confession[];
+  comments: Comment[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
 }
 
-export interface Report {
-  id: string;
-  target_type: 'confession' | 'comment';
-  target_id: string;
-  reason: string;
-  custom_reason?: string;
-  status: 'pending' | 'resolved' | 'dismissed';
-  created_at: string;
-  updated_at: string;
+export interface PaginatedCommentsResponse {
+  comments: Comment[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
+export interface LikeResponse {
+  confession_id: number;
+  likes_count: number;
+  message: string;
 }
 
 // ─── User fingerprint helper ──────────────────────────────────────────────────

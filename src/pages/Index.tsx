@@ -2,11 +2,11 @@ import { useState, useRef, useEffect } from 'react';
 import PageHeader from '@/components/PageHeader';
 import ConfessionForm from '@/components/ConfessionForm';
 import PageFooter from '@/components/PageFooter';
-import EmojiReactions from '@/components/EmojiReactions';
 import ReportModal from '@/components/ReportModal';
 import { useConfessions } from '@/hooks/useConfessions';
 import { useVotes } from '@/hooks/useVotes';
 import { useReports } from '@/hooks/useReports';
+import { Heart } from 'lucide-react';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -42,9 +42,9 @@ function SkeletonCard() {
 }
 
 interface CommentSectionProps {
-  postId: string;
-  comments: { id: string; content: string; created_at: string; upvotes: number; downvotes: number }[];
-  onAddComment: (postId: string, content: string) => Promise<void>;
+  postId: number;
+  comments: { id: number; content: string; created_at: string }[];
+  onAddComment: (postId: number, content: string) => Promise<void>;
   onReport: (id: string, isComment: boolean) => void;
 }
 
@@ -81,9 +81,8 @@ function CommentSection({ postId, comments, onAddComment, onReport }: CommentSec
             <p className="text-[14px] text-[#e0e0e0] leading-relaxed break-words">{c.content}</p>
             <div className="flex items-center gap-3 mt-1">
               <span className="text-xs text-[#555]">{timeAgo(c.created_at)}</span>
-              <span className="text-xs text-[#555]">{c.upvotes} likes</span>
               <button
-                onClick={() => onReport(c.id, true)}
+                onClick={() => onReport(c.id.toString(), true)}
                 className="text-xs text-[#444] hover:text-[#ff2d55] transition-colors opacity-0 group-hover:opacity-100"
               >
                 Report
@@ -123,150 +122,45 @@ function CommentSection({ postId, comments, onAddComment, onReport }: CommentSec
   );
 }
 
-function SelfDestructImage({ src, alt, context }: { src: string; alt: string; context?: string }) {
-  const [revealed, setRevealed] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(5);
-  const [destroyed, setDestroyed] = useState(false);
-
-  useEffect(() => {
-    if (revealed && timeLeft > 0) {
-      const timer = setTimeout(() => setTimeLeft(prev => prev - 1), 1000);
-      return () => clearTimeout(timer);
-    } else if (revealed && timeLeft === 0) {
-      setDestroyed(true);
-      setRevealed(false);
-    }
-  }, [revealed, timeLeft]);
-
-  if (destroyed) {
-    return (
-      <div className="w-full h-48 bg-[#1a1a1a] border border-[#333] rounded-xl flex flex-col items-center justify-center text-[#555]">
-        <span className="text-sm font-medium">Image self-destructed</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative">
-      {context && <p className="text-xs text-[#777] mb-2 italic">{context}</p>}
-      <div className="relative group rounded-xl overflow-hidden">
-        <img
-          src={src}
-          alt={alt}
-          className={`w-full max-h-80 object-cover transition-all duration-300 ${!revealed ? 'blur-2xl scale-110' : ''}`}
-        />
-        {!revealed ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 text-white">
-            <button
-              onClick={() => setRevealed(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-full font-medium transition-colors text-sm"
-            >
-              Tap to reveal (5s)
-            </button>
-          </div>
-        ) : (
-          <div className="absolute top-3 right-3 px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-white text-xs font-bold font-mono">
-            00:0{timeLeft}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function PollCard({ 
-  poll, 
-  onVote, 
-  hasVotedId 
-}: { 
-  poll: { question: string; options: { id: string; text: string; votes: number }[] }; 
-  onVote: (optionId: string) => void;
-  hasVotedId?: string;
-}) {
-  const totalVotes = poll.options.reduce((sum, o) => sum + o.votes, 0);
-
-  return (
-    <div className="bg-[#141414] border border-[#2a2a2a] rounded-xl p-4 my-2">
-      <p className="font-medium text-[#e0e0e0] mb-3">{poll.question}</p>
-      <div className="space-y-2">
-        {poll.options.map(opt => {
-          const percentage = totalVotes > 0 ? Math.round((opt.votes / totalVotes) * 100) : 0;
-          const isWinner = hasVotedId && opt.votes === Math.max(...poll.options.map(o => o.votes));
-          const isSelected = hasVotedId === opt.id;
-
-          return (
-            <button
-              key={opt.id}
-              onClick={() => !hasVotedId && onVote(opt.id)}
-              disabled={!!hasVotedId}
-              className={`relative w-full text-left p-3 rounded-lg border transition-all duration-300 overflow-hidden ${
-                hasVotedId 
-                  ? 'border-transparent bg-[#1e1e1e] cursor-default' 
-                  : 'border-[#333] hover:border-[#555] hover:bg-[#1a1a1a]'
-              }`}
-            >
-              {hasVotedId && (
-                <div 
-                  className={`absolute inset-0 opacity-20 ${isWinner ? 'bg-[#ff2d55]' : 'bg-white'}`}
-                  style={{ width: `${percentage}%`, transition: 'width 1s ease-out' }}
-                />
-              )}
-              <div className="relative flex justify-between items-center z-10">
-                <span className={`text-sm ${isSelected ? 'font-bold text-white' : 'text-[#ccc]'}`}>
-                  {opt.text} {isSelected && '✓'}
-                </span>
-                {hasVotedId && (
-                  <span className={`text-xs font-medium ${isWinner ? 'text-[#ff2d55]' : 'text-[#777]'}`}>
-                    {percentage}%
-                  </span>
-                )}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-      <p className="text-right text-[10px] text-[#555] mt-2 uppercase tracking-wider">
-        {totalVotes} votes
-      </p>
-    </div>
-  );
-}
-
 // ── Main Page ────────────────────────────────────────────────────────────────
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showCompose, setShowCompose] = useState(true);
-  const [sortBy, setSortBy] = useState<'newest' | 'top' | 'controversial'>('newest');
+  const [sortBy, setSortBy] = useState<'newest' | 'top'>('newest');
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportingId, setReportingId] = useState<string | null>(null);
   const [isReportingComment, setIsReportingComment] = useState(false);
-  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
+  const [expandedComments, setExpandedComments] = useState<Set<number>>(new Set());
 
-  const { confessions, loading, createConfession, addComment, updateVoteCount, votePoll, refetch } = useConfessions();
-  const { userVotes, vote } = useVotes();
+  const { confessions, loading, createConfession, addComment, updateVoteCount, refetch } = useConfessions();
+  const { likedConfessions, toggleLike, checkHasLiked } = useVotes();
   const { createReport } = useReports();
+
+  // Load like status for visible confessions
+  useEffect(() => {
+    confessions.forEach(confession => {
+      if (likedConfessions[confession.id] === undefined) {
+        checkHasLiked(confession.id);
+      }
+    });
+  }, [confessions]);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
   const handleSubmit = async (data: {
-    content: string; audioUrl?: string; videoUrl?: string;
-    videoContext?: string; imageUrl?: string; imageContext?: string; 
-    imageSelfDestruct?: boolean; tags?: string[]; buildingFlair?: string;
-    poll?: { question: string; options: string[] };
+    content: string; 
+    imageFile?: File;
+    tags?: string[]; 
   }) => {
     try { await createConfession(data); } catch { /* toast handled inside hook */ }
   };
 
-  const handleVote = async (id: string, type: 'up' | 'down', isComment = false) => {
-    const targetType = isComment ? 'comment' : 'confession';
-    if (!isComment) {
-      const cur = userVotes.confessions[id];
-      const success = await vote(id, type, targetType);
-      if (success) updateVoteCount(id, type, type === 'up' ? !!cur?.upvoted : !!cur?.downvoted, type === 'up' ? !!cur?.downvoted : !!cur?.upvoted);
-      return success;
+  const handleToggleLike = async (id: number) => {
+    const newCount = await toggleLike(id);
+    if (newCount !== null) {
+      updateVoteCount(id, newCount);
     }
-    return vote(id, type, targetType);
   };
 
   const handleReport = (id: string, isComment = false) => {
@@ -285,7 +179,7 @@ const Index = () => {
     }
   };
 
-  const toggleComments = (id: string) => {
+  const toggleComments = (id: number) => {
     setExpandedComments((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -299,12 +193,11 @@ const Index = () => {
     .filter((c) => {
       if (!searchTerm.trim()) return true;
       const q = searchTerm.toLowerCase();
-      return c.content.toLowerCase().includes(q) || c.tags?.some((t) => t.toLowerCase().includes(q));
+      return (c.text_content && c.text_content.toLowerCase().includes(q)) || c.tags?.some((t) => t.toLowerCase().includes(q));
     })
     .sort((a, b) => {
       if (sortBy === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      if (sortBy === 'top') return (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes);
-      return Math.min(b.upvotes, b.downvotes) - Math.min(a.upvotes, a.downvotes);
+      return b.likes_count - a.likes_count;
     });
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -357,13 +250,13 @@ const Index = () => {
 
           {/* Sort tabs */}
           <div className="flex items-center gap-0.5 bg-[#1e1e1e]/40 backdrop-blur-md border border-white/5 rounded-[16px] p-1">
-            {(['newest', 'top', 'controversial'] as const).map((s) => (
+            {(['newest', 'top'] as const).map((s) => (
               <button
                 key={s}
                 onClick={() => setSortBy(s)}
                 className={`sort-tab text-xs capitalize px-3 py-1 ${sortBy === s ? 'active' : ''}`}
               >
-                {s === 'newest' ? 'New' : s === 'top' ? 'Top' : 'Hot'}
+                {s === 'newest' ? 'New' : 'Top'}
               </button>
             ))}
           </div>
@@ -395,7 +288,7 @@ const Index = () => {
         ) : (
           <div className="space-y-3">
             {feed.map((post) => {
-              const votes = userVotes.confessions[post.id];
+              const hasLiked = likedConfessions[post.id] || false;
               const commentsOpen = expandedComments.has(post.id);
 
               return (
@@ -407,13 +300,8 @@ const Index = () => {
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="text-[13px] font-semibold text-[#ccc]">
-                            anon #{post.id.slice(-6)}
+                            anon #{post.id.toString().slice(-6)}
                           </p>
-                          {post.building_flair && (
-                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-white/10 text-white flex items-center gap-1">
-                              {post.building_flair}
-                            </span>
-                          )}
                         </div>
                         <p className="text-[11px] text-[#555] flex items-center gap-1">
                           {timeAgo(post.created_at)}
@@ -423,7 +311,7 @@ const Index = () => {
                       </div>
                     </div>
                     <button
-                      onClick={() => handleReport(post.id)}
+                      onClick={() => handleReport(post.id.toString())}
                       className="action-btn p-1.5 text-xs font-medium text-[#444] hover:text-[#ff2d55]"
                       title="Report"
                     >
@@ -432,10 +320,10 @@ const Index = () => {
                   </div>
 
                   {/* ── Content ── */}
-                  {post.content && (
+                  {post.text_content && (
                     <div className="px-4 pb-3">
                       <p className="text-[15px] text-[#e8e8e8] leading-relaxed whitespace-pre-wrap break-words">
-                        {post.content}
+                        {post.text_content}
                       </p>
                     </div>
                   )}
@@ -452,30 +340,10 @@ const Index = () => {
                   {/* ── Image ── */}
                   {post.image_url && (
                     <div className="px-4 pb-3">
-                      {post.image_self_destruct ? (
-                         <SelfDestructImage src={post.image_url} alt="Confession" context={post.image_context} />
-                      ) : (
-                        <>
-                          {post.image_context && (
-                            <p className="text-xs text-[#777] mb-2 italic">{post.image_context}</p>
-                          )}
-                          <img
-                            src={post.image_url}
-                            alt="Post"
-                            className="w-full rounded-xl object-cover max-h-80"
-                          />
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {/* ── Poll ── */}
-                  {post.poll && (
-                    <div className="px-4 pb-2">
-                      <PollCard 
-                        poll={post.poll} 
-                        onVote={(optId) => votePoll(post.id, optId)}
-                        hasVotedId={JSON.parse(localStorage.getItem('votedPolls') || '{}')[post.id]}
+                      <img
+                        src={post.image_url}
+                        alt="Post"
+                        className="w-full rounded-xl object-cover max-h-80"
                       />
                     </div>
                   )}
@@ -490,37 +358,20 @@ const Index = () => {
                   {/* ── Video ── */}
                   {post.video_url && (
                     <div className="px-4 pb-3">
-                      {post.video_context && (
-                        <p className="text-xs text-[#777] mb-2 italic">{post.video_context}</p>
-                      )}
                       <video controls src={post.video_url} className="w-full rounded-xl" />
                     </div>
                   )}
 
-                  {/* ── Emoji reactions ── */}
-                  <div className="px-4 pb-2">
-                    <EmojiReactions targetId={post.id} targetType="confession" />
-                  </div>
-
                   {/* ── Actions ── */}
                   <div className="divider" />
                   <div className="px-4 py-2 flex items-center gap-1">
-                    {/* Upvote */}
+                    {/* Like */}
                     <button
-                      onClick={() => handleVote(post.id, 'up')}
-                      className={`action-btn text-xs font-semibold ${votes?.upvoted ? 'active text-[#ff2d55]' : ''}`}
+                      onClick={() => handleToggleLike(post.id)}
+                      className={`action-btn text-xs font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors ${hasLiked ? 'active text-[#ff2d55] bg-[#ff2d55]/10' : 'text-[#888] hover:text-white hover:bg-white/5'}`}
                     >
-                      <span className="text-base leading-none">↑</span>
-                      <span className="text-xs">{post.upvotes}</span>
-                    </button>
-
-                    {/* Downvote */}
-                    <button
-                      onClick={() => handleVote(post.id, 'down')}
-                      className={`action-btn text-xs font-semibold ${votes?.downvoted ? 'active text-[#7c3aed]' : ''}`}
-                    >
-                      <span className="text-base leading-none">↓</span>
-                      <span className="text-xs">{post.downvotes}</span>
+                      <Heart size={16} fill={hasLiked ? "currentColor" : "none"} strokeWidth={hasLiked ? 0 : 2} className={hasLiked ? "scale-110 transition-transform" : ""} />
+                      <span className="text-sm">{post.likes_count}</span>
                     </button>
 
                     {/* Comments */}
@@ -533,7 +384,7 @@ const Index = () => {
 
                     {/* Report */}
                     <button
-                      onClick={() => handleReport(post.id)}
+                      onClick={() => handleReport(post.id.toString())}
                       className="action-btn ml-auto text-xs font-medium text-[#444] hover:text-[#ff2d55]"
                       title="Report"
                     >
