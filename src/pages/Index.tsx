@@ -263,7 +263,7 @@ const Index = () => {
           </div>
 
           {/* Refresh */}
-          <button onClick={refetch} className="action-btn p-2 text-xs font-semibold tracking-wide" title="Refresh">
+          <button onClick={() => refetch()} className="action-btn p-2 text-xs font-semibold tracking-wide" title="Refresh">
             ↺
           </button>
         </div>
@@ -340,11 +340,11 @@ const Index = () => {
 
                   {/* ── Image ── */}
                   {post.image_url && (
-                    <div className="px-4 pb-3">
+                    <div className="px-4 pb-3 flex justify-center bg-black/20 rounded-xl overflow-hidden mx-4">
                       <img
                         src={post.image_url}
                         alt="Post"
-                        className="w-full rounded-xl object-cover max-h-80"
+                        className="w-full object-contain max-h-[500px]"
                       />
                     </div>
                   )}

@@ -14,10 +14,10 @@ export const useConfessions = () => {
   const { toast } = useToast();
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const fetchConfessions = async () => {
+  const fetchConfessions = async (isBackground = false) => {
     console.log('Fetching confessions from API...');
     try {
-      setLoading(true);
+      if (!isBackground) setLoading(true);
 
       // GET /confessions returns { confessions, comments } pre-joined
       const data = await api.get<PaginatedConfessionsResponse>('/confessions');
@@ -53,7 +53,7 @@ export const useConfessions = () => {
         variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 
@@ -180,7 +180,7 @@ export const useConfessions = () => {
     fetchConfessions();
 
     // Poll every 30 seconds
-    pollRef.current = setInterval(fetchConfessions, 30_000);
+    pollRef.current = setInterval(() => fetchConfessions(true), 30_000);
 
     const handleForceRefresh = () => {
       console.log('Force refresh event received, fetching confessions...');
