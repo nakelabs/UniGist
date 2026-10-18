@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { ConfessionWithComments } from '@/hooks/useConfessions';
 import { Comment } from '@/lib/api';
+import ShareModal from './ShareModal';
+import { Share2 } from 'lucide-react';
 
 interface PostItemProps {
   post: ConfessionWithComments;
@@ -26,6 +28,7 @@ const PostItem = ({
   const [newComment, setNewComment] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(true);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   const handleSubmitComment = async () => {
     if (newComment.trim()) {
@@ -146,6 +149,15 @@ const PostItem = ({
           >
             <span className="font-cyber text-sm">{post.comments.length} replies</span>
           </button>
+
+          <button
+            onClick={() => setShareModalOpen(true)}
+            className="flex items-center space-x-1 text-retro-electric-blue hover:text-retro-cyber-yellow transition-colors group"
+            title="Share confession"
+          >
+            <Share2 size={14} />
+            <span className="font-cyber text-sm">share</span>
+          </button>
         </div>
 
         <div className="flex items-center space-x-1 text-retro-electric-blue">
@@ -260,6 +272,13 @@ const PostItem = ({
           </div>
         </div>
       )}
+
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        post={post}
+      />
     </div>
   );
 };

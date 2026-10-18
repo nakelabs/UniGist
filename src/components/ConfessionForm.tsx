@@ -1,15 +1,17 @@
 import { useState } from 'react';
+import AudioRecorder from './AudioRecorder';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Image, Video, Mic, Tag, Info } from 'lucide-react';
 
 interface ConfessionFormProps {
   onSubmit: (confession: {
     content: string;
     imageFile?: File;
+    videoFile?: File;
     audioFile?: File;
     tags?: string[];
   }) => Promise<void>;
 }
-
-import AudioRecorder from './AudioRecorder';
 
 const SUGGESTED_TAGS = ['university', 'relationships', 'work', 'family', 'secrets', 'funny'];
 
@@ -20,6 +22,8 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -51,6 +55,14 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
     setImageUrl(URL.createObjectURL(file));
   };
 
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith('video/')) return;
+
+    setVideoFile(file);
+    setVideoUrl(URL.createObjectURL(file));
+  };
+
   const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith('audio/')) return;
@@ -62,7 +74,7 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
   // ── Submit ───────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim() && !imageFile && !audioFile && !audioBlob) return;
+    if (!content.trim() && !imageFile && !videoFile && !audioFile && !audioBlob) return;
 
     setIsSubmitting(true);
     try {
@@ -71,6 +83,7 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
       await onSubmit({
         content,
         imageFile: imageFile || undefined,
+        videoFile: videoFile || undefined,
         audioFile: audioToSubmit,
         tags,
       });
@@ -79,6 +92,8 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
       setCurrentTag('');
       setImageFile(null);
       setImageUrl(null);
+      setVideoFile(null);
+      setVideoUrl(null);
       setAudioFile(null);
       setAudioBlob(null);
       setAudioUrl(null);
@@ -91,7 +106,7 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
     }
   };
 
-  const canPost = (content.trim().length > 0 || !!imageFile || !!audioFile || !!audioBlob) && !isSubmitting;
+  const canPost = (content.trim().length > 0 || !!imageFile || !!videoFile || !!audioFile || !!audioBlob) && !isSubmitting;
 
   return (
     <div className="mb-4 animate-fade-up">
@@ -126,6 +141,24 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
               type="button"
               onClick={() => { setImageUrl(null); setImageFile(null); }}
               className="absolute top-2 right-6 p-1.5 bg-black/70 rounded-full text-white hover:bg-black text-xs leading-none font-bold"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        {/* Video preview */}
+        {videoUrl && (
+          <div className="px-4 pb-3 relative">
+            <video
+              src={videoUrl}
+              controls
+              className="w-full max-h-64 rounded-xl bg-black"
+            />
+            <button
+              type="button"
+              onClick={() => { setVideoUrl(null); setVideoFile(null); }}
+              className="absolute top-2 right-6 p-1.5 bg-black/70 rounded-full text-white hover:bg-black text-xs leading-none font-bold z-10"
             >
               ×
             </button>
@@ -198,7 +231,7 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
           </div>
         )}
 
-        {/* File input (hidden) */}
+        {/* File inputs (hidden) */}
         <input 
           type="file" 
           id="image-upload" 
@@ -206,51 +239,103 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
           className="hidden" 
           onChange={handleFileUpload}
         />
+        <input 
+          type="file" 
+          id="video-upload" 
+          accept="video/*" 
+          className="hidden" 
+          onChange={handleVideoUpload}
+        />
 
         {/* Bottom toolbar */}
         <div className="py-2 flex items-center justify-between">
           {/* Media / tag toggles */}
           <div className="flex items-center gap-1">
-            <label
-              htmlFor="image-upload"
-              className={`action-btn cursor-pointer text-xs font-semibold tracking-wide ${(imageUrl) ? 'text-[#ff2d55]' : ''}`}
-              title="Attach image"
-            >
-              Photo
-            </label>
-            <button
-              type="button"
-              onClick={() => setShowAudioRecorder(!showAudioRecorder)}
-              className={`action-btn text-xs font-semibold tracking-wide ${showAudioRecorder || audioUrl ? 'text-[#0ea5e9]' : ''}`}
-              title="Add audio"
-            >
-              Audio
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowTagSection(!showTagSection)}
-              className={`action-btn text-xs font-semibold tracking-wide ${showTagSection || tags.length > 0 ? 'text-[#7c3aed]' : ''}`}
-              title="Add tags"
-            >
-              Tags{tags.length > 0 && <span className="ml-1 text-[#7c3aed]">({tags.length})</span>}
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <label
+                  htmlFor="image-upload"
+                  className={`action-btn cursor-pointer text-xs font-semibold tracking-wide flex items-center gap-1 ${(imageUrl) ? 'text-[#ff2d55]' : ''}`}
+                >
+                  <Image size={14} />
+                  <span>Photo</span>
+                </label>
+              </TooltipTrigger>
+              <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
+                Attach an image (JPG, PNG, WebP)
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <label
+                  htmlFor="video-upload"
+                  className={`action-btn cursor-pointer text-xs font-semibold tracking-wide flex items-center gap-1 ${(videoUrl) ? 'text-[#a855f7]' : ''}`}
+                >
+                  <Video size={14} />
+                  <span>Video</span>
+                </label>
+              </TooltipTrigger>
+              <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
+                Attach a video clip (MP4, WebM)
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => setShowAudioRecorder(!showAudioRecorder)}
+                  className={`action-btn text-xs font-semibold tracking-wide flex items-center gap-1 ${showAudioRecorder || audioUrl ? 'text-[#0ea5e9]' : ''}`}
+                >
+                  <Mic size={14} />
+                  <span>Audio</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
+                Record a voice note or upload audio
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => setShowTagSection(!showTagSection)}
+                  className={`action-btn text-xs font-semibold tracking-wide flex items-center gap-1 ${showTagSection || tags.length > 0 ? 'text-[#7c3aed]' : ''}`}
+                >
+                  <Tag size={14} />
+                  <span>Tags{tags.length > 0 && <span className="ml-1 text-[#7c3aed]">({tags.length})</span>}</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
+                Add up to 5 campus tags (e.g. #secrets)
+              </TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Post button */}
-          <button
-            type="submit"
-            disabled={!canPost}
-            className="btn-brand"
-          >
-            {isSubmitting ? (
-              <span className="flex items-center gap-2">
-                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Yarning
-              </span>
-            ) : (
-              <span>Yarn it</span>
-            )}
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="submit"
+                disabled={!canPost}
+                className="btn-brand"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Yarning
+                  </span>
+                ) : (
+                  <span>Yarn it</span>
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
+              {canPost ? 'Post your secret anonymously (disappears in 24h)' : 'Add text, audio, photo, or video to post'}
+            </TooltipContent>
+          </Tooltip>
         </div>
       </form>
     </div>

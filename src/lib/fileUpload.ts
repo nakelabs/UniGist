@@ -1,6 +1,4 @@
-// File upload utilities — uses FastAPI multipart upload endpoint.
-// Change this URL when deploying to production.
-const BASE_URL = 'http://localhost:8000';
+import { BASE_URL } from './api';
 
 /**
  * Upload a Blob/File to POST /upload.

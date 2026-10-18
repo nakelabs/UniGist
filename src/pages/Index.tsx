@@ -3,10 +3,12 @@ import PageHeader from '@/components/PageHeader';
 import ConfessionForm from '@/components/ConfessionForm';
 import PageFooter from '@/components/PageFooter';
 import ReportModal from '@/components/ReportModal';
-import { useConfessions } from '@/hooks/useConfessions';
+import ShareModal from '@/components/ShareModal';
+import { useConfessions, ConfessionWithComments } from '@/hooks/useConfessions';
 import { useVotes } from '@/hooks/useVotes';
 import { useReports } from '@/hooks/useReports';
-import { Heart } from 'lucide-react';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Heart, Share2, HelpCircle } from 'lucide-react';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -131,6 +133,8 @@ const Index = () => {
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportingId, setReportingId] = useState<string | null>(null);
   const [isReportingComment, setIsReportingComment] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [sharingPost, setSharingPost] = useState<ConfessionWithComments | null>(null);
   const [expandedComments, setExpandedComments] = useState<Set<number>>(new Set());
 
   const { confessions, loading, createConfession, addComment, updateVoteCount, refetch } = useConfessions();
@@ -146,11 +150,33 @@ const Index = () => {
     });
   }, [confessions]);
 
+  // Deep-link auto-scroll when opened via shared post link
+  useEffect(() => {
+    if (!loading && confessions.length > 0) {
+      const hash = window.location.hash;
+      const params = new URLSearchParams(window.location.search);
+      const targetId = params.get('post') || (hash.startsWith('#post-') ? hash.replace('#post-', '') : null);
+      if (targetId) {
+        setTimeout(() => {
+          const el = document.getElementById(`post-${targetId}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('ring-2', 'ring-[#ff2d55]', 'ring-offset-2', 'ring-offset-[#111]');
+            setTimeout(() => {
+              el.classList.remove('ring-2', 'ring-[#ff2d55]', 'ring-offset-2', 'ring-offset-[#111]');
+            }, 3000);
+          }
+        }, 350);
+      }
+    }
+  }, [loading, confessions.length]);
+
   // ── Handlers ───────────────────────────────────────────────────────────────
 
   const handleSubmit = async (data: {
     content: string; 
     imageFile?: File;
+    videoFile?: File;
     audioFile?: File;
     tags?: string[]; 
   }) => {
@@ -186,6 +212,11 @@ const Index = () => {
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  };
+
+  const handleShare = (post: ConfessionWithComments) => {
+    setSharingPost(post);
+    setShareModalOpen(true);
   };
 
   // ── Filter + sort ──────────────────────────────────────────────────────────
@@ -231,6 +262,29 @@ const Index = () => {
           </button>
         )}
 
+        {/* Quick guide for new users */}
+        <div className="flex items-center justify-between px-1 text-xs text-[#666]">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button type="button" className="flex items-center gap-1.5 hover:text-[#ff2d55] transition-colors py-0.5">
+                <HelpCircle size={13} className="text-[#ff2d55]" />
+                <span>How Yarnz works</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="bg-[#1c1c1f] text-[#ccc] border-white/10 text-xs max-w-xs p-3 space-y-1.5 shadow-2xl z-50">
+              <p className="font-semibold text-white">How Yarnz Works</p>
+              <ul className="space-y-1 text-[11px] list-disc list-inside text-[#aaa]">
+                <li><strong className="text-white">100% Anonymous:</strong> No signups, tracking, or names attached.</li>
+                <li><strong className="text-white">24h Vanish:</strong> Every confession & reply self-destructs after 24 hours.</li>
+                <li><strong className="text-white">Media:</strong> Yarn via text, photos, video clips, or audio notes.</li>
+                <li><strong className="text-white">Share:</strong> Send yarns directly into WhatsApp & Telegram groups.</li>
+              </ul>
+            </TooltipContent>
+          </Tooltip>
+
+          <span className="text-[11px] text-[#555]">All yarns vanish in 24h</span>
+        </div>
+
         {/* ── Filter bar ── */}
         <div className="flex items-center gap-2 py-1">
           {/* Search */}
@@ -252,20 +306,33 @@ const Index = () => {
           {/* Sort tabs */}
           <div className="flex items-center gap-0.5 bg-[#1e1e1e]/40 backdrop-blur-md border border-white/5 rounded-[16px] p-1">
             {(['newest', 'top'] as const).map((s) => (
-              <button
-                key={s}
-                onClick={() => setSortBy(s)}
-                className={`sort-tab text-xs capitalize px-3 py-1 ${sortBy === s ? 'active' : ''}`}
-              >
-                {s === 'newest' ? 'New' : 'Top'}
-              </button>
+              <Tooltip key={s}>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setSortBy(s)}
+                    className={`sort-tab text-xs capitalize px-3 py-1 ${sortBy === s ? 'active' : ''}`}
+                  >
+                    {s === 'newest' ? 'New' : 'Top'}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
+                  {s === 'newest' ? 'Most recent confessions' : 'Highest-voted confessions'}
+                </TooltipContent>
+              </Tooltip>
             ))}
           </div>
 
           {/* Refresh */}
-          <button onClick={() => refetch()} className="action-btn p-2 text-xs font-semibold tracking-wide" title="Refresh">
-            ↺
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button onClick={() => refetch()} className="action-btn p-2 text-xs font-semibold tracking-wide">
+                ↺
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
+              Check for new yarns
+            </TooltipContent>
+          </Tooltip>
         </div>
 
         {/* ── Feed ── */}
@@ -293,7 +360,7 @@ const Index = () => {
               const commentsOpen = expandedComments.has(post.id);
 
               return (
-                <article key={post.id} className="post-card animate-fade-up">
+                <article key={post.id} id={`post-${post.id}`} className="post-card animate-fade-up">
                   {/* ── Post header ── */}
                   <div className="flex items-center justify-between px-4 pt-3 pb-2">
                     <div className="flex items-center gap-2">
@@ -307,7 +374,14 @@ const Index = () => {
                         <p className="text-[11px] text-[#555] flex items-center gap-1">
                           {timeAgo(post.created_at)}
                           <span className="text-[#333]">·</span>
-                          <span className="text-[#ff2d55]/70">{expiresIn(post.created_at)}</span>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-[#ff2d55]/70 cursor-help">{expiresIn(post.created_at)}</span>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
+                              Auto-deletes 24 hours after creation
+                            </TooltipContent>
+                          </Tooltip>
                         </p>
                       </div>
                     </div>
@@ -367,30 +441,66 @@ const Index = () => {
                   <div className="divider" />
                   <div className="px-4 py-2 flex items-center gap-1">
                     {/* Like */}
-                    <button
-                      onClick={() => handleToggleLike(post.id)}
-                      className={`action-btn text-xs font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors ${hasLiked ? 'active text-[#ff2d55] bg-[#ff2d55]/10' : 'text-[#888] hover:text-white hover:bg-white/5'}`}
-                    >
-                      <Heart size={16} fill={hasLiked ? "currentColor" : "none"} strokeWidth={hasLiked ? 0 : 2} className={hasLiked ? "scale-110 transition-transform" : ""} />
-                      <span className="text-sm">{post.likes_count}</span>
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => handleToggleLike(post.id)}
+                          className={`action-btn text-xs font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors ${hasLiked ? 'active text-[#ff2d55] bg-[#ff2d55]/10' : 'text-[#888] hover:text-white hover:bg-white/5'}`}
+                        >
+                          <Heart size={16} fill={hasLiked ? "currentColor" : "none"} strokeWidth={hasLiked ? 0 : 2} className={hasLiked ? "scale-110 transition-transform" : ""} />
+                          <span className="text-sm">{post.likes_count}</span>
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
+                        {hasLiked ? 'Unlike confession' : 'Like anonymously'}
+                      </TooltipContent>
+                    </Tooltip>
 
                     {/* Comments */}
-                    <button
-                      onClick={() => toggleComments(post.id)}
-                      className={`action-btn text-xs font-semibold ${commentsOpen ? 'text-white' : ''}`}
-                    >
-                      <span className="text-xs">{post.comments.length} replies</span>
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => toggleComments(post.id)}
+                          className={`action-btn text-xs font-semibold ${commentsOpen ? 'text-white' : ''}`}
+                        >
+                          <span className="text-xs">{post.comments.length} replies</span>
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
+                        {commentsOpen ? 'Hide replies' : 'Read or post anonymous replies'}
+                      </TooltipContent>
+                    </Tooltip>
+
+                    {/* Share */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => handleShare(post)}
+                          className="action-btn text-xs font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors text-[#888] hover:text-white hover:bg-white/5"
+                        >
+                          <Share2 size={15} />
+                          <span className="text-xs">Share</span>
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
+                        Share to WhatsApp, Telegram, or copy link
+                      </TooltipContent>
+                    </Tooltip>
 
                     {/* Report */}
-                    <button
-                      onClick={() => handleReport(post.id.toString())}
-                      className="action-btn ml-auto text-xs font-medium text-[#444] hover:text-[#ff2d55]"
-                      title="Report"
-                    >
-                      Report
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => handleReport(post.id.toString())}
+                          className="action-btn ml-auto text-xs font-medium text-[#444] hover:text-[#ff2d55]"
+                        >
+                          Report
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
+                        Report inappropriate or harmful content
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
 
                   {/* ── Comments ── */}
@@ -424,6 +534,12 @@ const Index = () => {
         onSubmit={handleReportSubmit}
         postId={reportingId || ''}
         isComment={isReportingComment}
+      />
+
+      <ShareModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        post={sharingPost}
       />
     </div>
   );

@@ -13,6 +13,9 @@ interface AdminStats {
   totalComments: number;
   totalReports: number;
   pendingReports: number;
+  totalUsers: number;
+  totalVisits: number;
+  activeUsers: number;
 }
 
 interface ReportWithContent {
@@ -40,7 +43,10 @@ export default function Admin() {
     totalPosts: 0,
     totalComments: 0,
     totalReports: 0,
-    pendingReports: 0
+    pendingReports: 0,
+    totalUsers: 0,
+    totalVisits: 0,
+    activeUsers: 0,
   });
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
@@ -122,12 +128,15 @@ export default function Admin() {
   const loadAdminData = async () => {
     console.log('Loading admin data...');
     try {
-      // GET /admin/stats returns { total_posts, total_comments, total_reports, pending_reports }
+      // GET /admin/stats returns aggregate metrics
       const data = await api.get<{
-        total_posts: number;
-        total_comments: number;
-        total_reports: number;
-        pending_reports: number;
+        total_posts?: number;
+        total_comments?: number;
+        total_reports?: number;
+        pending_reports?: number;
+        total_users?: number;
+        total_visits?: number;
+        active_users?: number;
       }>('/admin/stats');
 
       console.log('Admin stats loaded:', data);
@@ -137,6 +146,9 @@ export default function Admin() {
         totalComments: data.total_comments ?? 0,
         totalReports: data.total_reports ?? 0,
         pendingReports: data.pending_reports ?? 0,
+        totalUsers: data.total_users ?? 0,
+        totalVisits: data.total_visits ?? 0,
+        activeUsers: data.active_users ?? 0,
       });
     } catch (error) {
       console.error('Error fetching admin stats:', error);
@@ -271,7 +283,48 @@ export default function Admin() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          <Card className="bg-black border-cyan-400">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-cyan-400 font-mono text-sm">TOTAL VISITS</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-mono text-cyan-300">{stats.totalVisits}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-black border-cyan-400">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-cyan-400 font-mono text-sm">TOTAL USERS</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-mono text-cyan-300">{stats.totalUsers}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-black border-emerald-400">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-emerald-400 font-mono text-sm flex items-center gap-2">
+                ACTIVE USERS
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-mono text-emerald-300">{stats.activeUsers}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-black border-red-400">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-red-400 font-mono text-sm">PENDING REPORTS</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-mono text-red-300">{stats.pendingReports}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <Card className="bg-black border-green-400">
             <CardHeader className="pb-2">
               <CardTitle className="text-green-400 font-mono text-sm">TOTAL POSTS</CardTitle>
@@ -296,15 +349,6 @@ export default function Admin() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-mono text-green-300">{stats.totalReports}</div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-black border-red-400">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-red-400 font-mono text-sm">PENDING REPORTS</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-mono text-red-300">{stats.pendingReports}</div>
             </CardContent>
           </Card>
         </div>

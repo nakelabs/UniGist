@@ -1,6 +1,6 @@
-// Central API client — points at your FastAPI backend.
-// Change this URL when deploying to production.
-const BASE_URL = 'https://yarnz-b.onrender.com';
+export const BASE_URL = (
+  import.meta.env.VITE_API_URL || 'https://yarnz-backend-kaevx6-ca79f6-187-77-177-128.sslip.io'
+).replace(/\/+$/, '');
 
 async function request<T>(
   path: string,
