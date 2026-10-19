@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { X, ShieldAlert, CheckCircle2, ChevronRight, AlertCircle } from 'lucide-react';
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -9,81 +10,72 @@ interface ReportModalProps {
   isComment?: boolean;
 }
 
-const reportReasons = [
-  {
-    value: 'spam',
-    label: 'Spam or Repetitive Content',
-    description: 'Unwanted promotional content or repetitive posts',
-    icon: '🚫'
-  },
+const REPORT_REASONS = [
   {
     value: 'harassment',
-    label: 'Harassment or Bullying',
-    description: 'Content that targets or bullies individuals',
-    icon: '🎯'
+    title: 'Harassment or Bullying',
+    description: 'Targeted attacks, insults, or intimidation of individuals',
   },
   {
     value: 'hate-speech',
-    label: 'Hate Speech',
-    description: 'Discriminatory language or content promoting hatred',
-    icon: '⚠️'
-  },
-  {
-    value: 'violence',
-    label: 'Violence or Threats',
-    description: 'Content promoting violence or containing threats',
-    icon: '🔴'
+    title: 'Hate Speech',
+    description: 'Discriminatory language, slurs, or promoting hatred',
   },
   {
     value: 'inappropriate',
-    label: 'Inappropriate Content',
-    description: 'Sexual content, graphic material, or inappropriate for the platform',
-    icon: '🔞'
+    title: 'Inappropriate or NSFW',
+    description: 'Explicit sexual material or graphic non-consensual content',
+  },
+  {
+    value: 'violence',
+    title: 'Violence or Physical Harm',
+    description: 'Threats of violence, encouragement of harm, or dangerous acts',
   },
   {
     value: 'personal-info',
-    label: 'Personal Information',
-    description: 'Contains personal information that should not be shared',
-    icon: '📱'
+    title: 'Doxxing or Personal Info',
+    description: 'Sharing phone numbers, real names, or private info without consent',
   },
   {
-    value: 'false-info',
-    label: 'False Information',
-    description: 'Deliberately misleading or false content',
-    icon: '❌'
-  },
-  {
-    value: 'copyright',
-    label: 'Copyright Violation',
-    description: 'Unauthorized use of copyrighted material',
-    icon: '©️'
+    value: 'spam',
+    title: 'Spam or Scam',
+    description: 'Repetitive messages, commercial ads, or deceptive links',
   },
   {
     value: 'other',
-    label: 'Other Reason',
-    description: 'Something else not covered by the above categories',
-    icon: '💭'
-  }
+    title: 'Other',
+    description: 'Something else that violates community safety',
+  },
 ];
 
-const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, onSubmit, postId, isComment = false }) => {
+export const ReportModal: React.FC<ReportModalProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  postId,
+  isComment = false,
+}) => {
   const [selectedReason, setSelectedReason] = useState<string>('');
   const [customReason, setCustomReason] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   // Lock background body scroll completely on iOS and desktop
   useBodyScrollLock(isOpen);
 
+  if (!isOpen) return null;
+
   const handleSubmit = async () => {
-    if (!selectedReason) return;
-    
+    if (!selectedReason || isSubmitting) return;
+
     setIsSubmitting(true);
     try {
       await onSubmit(selectedReason, selectedReason === 'other' ? customReason : undefined);
-      onClose();
-      setSelectedReason('');
-      setCustomReason('');
-    } finally {
+      setSubmitted(true);
+      setTimeout(() => {
+        handleClose();
+      }, 1400);
+    } catch {
       setIsSubmitting(false);
     }
   };
@@ -92,118 +84,133 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, onSubmit, po
     onClose();
     setSelectedReason('');
     setCustomReason('');
+    setIsSubmitting(false);
+    setSubmitted(false);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
-      <div className="retro-card max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-2">
-            <h2 className="font-pixel text-lg text-retro-cyber-yellow">
-              Report {isComment ? 'Comment' : 'Confession'} #{postId.slice(-8)}
-            </h2>
-          </div>
-          <button 
-            onClick={handleClose}
-            className="text-retro-hot-pink hover:text-retro-cyber-yellow transition-colors font-bold text-xl leading-none"
-            title="Close report modal"
-          >
-            ×
-          </button>
-        </div>
-
-        <div className="mb-6">
-          <div className="flex items-start gap-2 mb-4">
-            <span className="text-retro-cyber-yellow font-bold text-xs mt-0.5">!</span>
-            <p className="font-cyber text-sm text-retro-pastel-blue">
-              Help us keep Yarnz safe by reporting content that violates our community guidelines.
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-3 mb-6">
-          <h3 className="font-pixel text-retro-neon-green text-sm mb-3">
-            Why are you reporting this post?
-          </h3>
-          
-          {reportReasons.map((reason) => (
-            <label
-              key={reason.value}
-              className={`block p-3 border cursor-pointer transition-all ${
-                selectedReason === reason.value
-                  ? 'border-retro-cyber-yellow bg-retro-cyber-yellow/10'
-                  : 'border-retro-electric-blue/30 hover:border-retro-electric-blue/60'
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <input
-                  type="radio"
-                  name="reportReason"
-                  value={reason.value}
-                  checked={selectedReason === reason.value}
-                  onChange={(e) => setSelectedReason(e.target.value)}
-                  className="mt-1 retro-radio"
-                />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-cyber text-sm text-retro-neon-green font-semibold">
-                      {reason.label}
-                    </span>
-                  </div>
-                  <p className="font-cyber text-xs text-retro-pastel-blue/80">
-                    {reason.description}
-                  </p>
-                </div>
-              </div>
-            </label>
-          ))}
-        </div>
-
-        {selectedReason === 'other' && (
-          <div className="mb-6">
-            <label className="block mb-2">
-              <span className="font-cyber text-sm text-retro-neon-green">
-                Please describe the issue:
-              </span>
-            </label>
-            <textarea
-              value={customReason}
-              onChange={(e) => setCustomReason(e.target.value)}
-              placeholder={`Provide more details about why you're reporting this ${isComment ? 'comment' : 'post'}...`}
-              className="w-full h-24 bg-gray-900/50 border border-retro-electric-blue/30 rounded p-3 text-retro-pastel-blue font-cyber text-sm resize-none focus:outline-none focus:border-retro-cyber-yellow"
-              maxLength={500}
-              required
-            />
-            <div className="text-xs text-retro-electric-blue/70 mt-1">
-              {customReason.length}/500 characters
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 overflow-hidden touch-none">
+      <div 
+        className="w-full sm:max-w-[480px] max-h-[92dvh] sm:max-h-[85vh] bg-[#0c0d0e] border border-[#2f3336] sm:rounded-2xl rounded-t-2xl flex flex-col overflow-hidden shadow-2xl animate-fade-in touch-auto"
+      >
+        {/* Header */}
+        <div className="h-14 px-4 flex items-center justify-between border-b border-[#2f3336] shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-[#ff2d55]/10 flex items-center justify-center text-[#ff2d55]">
+              <ShieldAlert size={17} />
+            </div>
+            <div>
+              <h2 className="text-[15px] font-bold text-white leading-tight">
+                Report {isComment ? 'Reply' : 'Post'}
+              </h2>
+              <span className="text-[11px] text-[#71767b]">100% anonymous report</span>
             </div>
           </div>
-        )}
 
-        <div className="flex justify-end gap-3">
           <button
             onClick={handleClose}
-            className="px-4 py-2 border border-retro-electric-blue text-retro-electric-blue font-pixel text-xs hover:bg-retro-electric-blue hover:text-black transition-colors"
+            className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center text-[#71767b] hover:text-white transition-colors"
+            title="Close"
           >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={!selectedReason || (selectedReason === 'other' && !customReason.trim()) || isSubmitting}
-            className="px-4 py-2 bg-retro-hot-pink text-black font-pixel text-xs hover:bg-retro-cyber-yellow disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {isSubmitting ? 'Submitting...' : 'Submit Report'}
+            <X size={18} />
           </button>
         </div>
 
-        <div className="mt-4 p-3 border border-retro-electric-blue/20 bg-retro-electric-blue/5">
-          <p className="font-cyber text-xs text-retro-pastel-blue/80">
-            <strong>Note:</strong> Reports are reviewed by our moderation team. False reports may result in account restrictions.
-            All reports are anonymous and the user won't know you reported them.
-          </p>
-        </div>
+        {/* Modal Body */}
+        {submitted ? (
+          <div className="py-12 px-6 flex flex-col items-center text-center space-y-3">
+            <div className="w-12 h-12 rounded-full bg-[#00ba7c]/15 text-[#00ba7c] flex items-center justify-center">
+              <CheckCircle2 size={26} />
+            </div>
+            <h3 className="text-base font-bold text-white">Report Received</h3>
+            <p className="text-xs text-[#71767b] max-w-xs leading-relaxed">
+              Thank you for keeping Yarnz safe. Our moderation team has been notified.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 overscroll-contain">
+              <p className="text-xs font-medium text-[#71767b] pb-1">
+                Select the main issue with this {isComment ? 'reply' : 'confession'}:
+              </p>
+
+              {REPORT_REASONS.map((r) => {
+                const isSelected = selectedReason === r.value;
+                return (
+                  <div
+                    key={r.value}
+                    onClick={() => setSelectedReason(r.value)}
+                    className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-3 ${
+                      isSelected
+                        ? 'border-[#ff2d55] bg-[#ff2d55]/10 text-white'
+                        : 'border-[#2f3336] hover:border-white/20 bg-[#16181c]/50 text-[#e7e9ea]'
+                    }`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold leading-tight">{r.title}</p>
+                      <p className="text-[12px] text-[#71767b] leading-tight mt-0.5">{r.description}</p>
+                    </div>
+
+                    <div className="shrink-0 flex items-center justify-center">
+                      <div 
+                        className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                          isSelected ? 'border-[#ff2d55] bg-[#ff2d55]' : 'border-[#444]'
+                        }`}
+                      >
+                        {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Extra details textarea if "Other" is chosen */}
+              {selectedReason === 'other' && (
+                <div className="pt-2 animate-fade-in">
+                  <label className="block text-xs font-semibold text-[#aaa] mb-1.5">
+                    Additional details:
+                  </label>
+                  <textarea
+                    value={customReason}
+                    onChange={(e) => setCustomReason(e.target.value)}
+                    placeholder="Briefly describe what happened..."
+                    maxLength={300}
+                    className="w-full bg-[#16181c] border border-[#2f3336] rounded-xl p-3 text-[16px] sm:text-sm text-white placeholder-[#555] focus:outline-none focus:border-[#ff2d55] transition-colors resize-none h-20"
+                  />
+                  <span className="text-[11px] text-[#555] text-right block mt-1">
+                    {customReason.length}/300
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Sticky Actions Footer */}
+            <div className="p-3.5 border-t border-[#2f3336] bg-[#0c0d0e] flex items-center justify-end gap-2 shrink-0 pb-[max(14px,env(safe-area-inset-bottom))]">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="px-4 py-2 rounded-full text-xs sm:text-sm font-semibold text-[#888] hover:text-white hover:bg-white/10 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!selectedReason || (selectedReason === 'other' && !customReason.trim()) || isSubmitting}
+                className="bg-[#ff2d55] hover:bg-[#e02449] disabled:opacity-30 disabled:cursor-not-allowed text-white font-bold text-xs sm:text-sm px-5 py-2 rounded-full transition-all active:scale-95 shrink-0 flex items-center gap-1.5 shadow-lg shadow-[#ff2d55]/20"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Submitting...</span>
+                  </span>
+                ) : (
+                  <span>Submit Report</span>
+                )}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
