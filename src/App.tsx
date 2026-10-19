@@ -21,8 +21,17 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            {/* The Boss Admin Routes */}
             <Route path="/theboss" element={<Admin />} />
-            <Route path="/admin-secure-access-2025" element={<Navigate to="/theboss" replace />} />
+            <Route path="/TheBoss" element={<Admin />} />
+            <Route path="/Theboss" element={<Admin />} />
+            <Route path="/the-boss" element={<Admin />} />
+            <Route path="/The-Boss" element={<Admin />} />
+            <Route path="/boss" element={<Admin />} />
+            <Route path="/Boss" element={<Admin />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/Admin" element={<Admin />} />
+            <Route path="/admin-secure-access-2025" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
