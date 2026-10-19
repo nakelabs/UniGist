@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ConfessionWithComments } from '@/hooks/useConfessions';
-import { ArrowLeft, Heart, MessageCircle, Share2, Clock, Send, MoreHorizontal, Bookmark, BarChart2 } from 'lucide-react';
-import { getGeneratedUser, getPostViews, formatTwitterNumber } from '@/lib/usernameGenerator';
+import { ArrowLeft, Heart, MessageCircle, Share2, Clock, Send, MoreHorizontal, Reply, X } from 'lucide-react';
+import { getGeneratedUser } from '@/lib/usernameGenerator';
 import { formatTweetContent } from './TwitterPostCard';
 import { timeAgo as formatTimeAgo, expiresIn as formatExpiresIn } from '@/lib/dateUtils';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
@@ -12,7 +12,7 @@ interface PostDiscussionModalProps {
   post: ConfessionWithComments | null;
   onVote: (id: number) => Promise<void>;
   hasLiked: boolean;
-  onAddComment: (postId: number, content: string) => Promise<void>;
+  onAddComment: (postId: number, content: string, taggedCommentId?: number | null) => Promise<void>;
   onReport: (id: string, isComment?: boolean) => void;
   onShare: (post: ConfessionWithComments) => void;
   timeAgo?: (dateStr: string) => string;
@@ -32,6 +32,7 @@ export const PostDiscussionModal: React.FC<PostDiscussionModalProps> = ({
   expiresIn = formatExpiresIn,
 }) => {
   const [replyText, setReplyText] = useState('');
+  const [replyingTo, setReplyingTo] = useState<{ id: number; username: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -44,7 +45,6 @@ export const PostDiscussionModal: React.FC<PostDiscussionModalProps> = ({
 
   const postId = post.id.toString();
   const postUser = getGeneratedUser(post.id);
-  const views = getPostViews(post.id, post.likes_count, post.comments?.length || 0);
 
   const handleSubmitReply = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -52,8 +52,9 @@ export const PostDiscussionModal: React.FC<PostDiscussionModalProps> = ({
 
     setIsSubmitting(true);
     try {
-      await onAddComment(post.id, replyText.trim());
+      await onAddComment(post.id, replyText.trim(), replyingTo?.id || null);
       setReplyText('');
+      setReplyingTo(null);
       // Scroll to bottom of comments
       setTimeout(() => {
         if (scrollRef.current) {
@@ -188,8 +189,6 @@ export const PostDiscussionModal: React.FC<PostDiscussionModalProps> = ({
             {/* Timestamp */}
             <div className="text-[13px] text-[#71767b] pt-2 flex items-center gap-1.5">
               <span>{timeAgo(post.created_at)}</span>
-              <span>·</span>
-              <span className="text-[#e7e9ea] font-medium">{views} Views</span>
             </div>
 
             {/* X-style metrics bar */}
@@ -201,10 +200,6 @@ export const PostDiscussionModal: React.FC<PostDiscussionModalProps> = ({
               <div>
                 <strong className="text-white font-bold">{post.likes_count}</strong>{' '}
                 <span className="text-[#71767b]">Likes</span>
-              </div>
-              <div>
-                <strong className="text-white font-bold">{views}</strong>{' '}
-                <span className="text-[#71767b]">Views</span>
               </div>
             </div>
 
@@ -277,24 +272,52 @@ export const PostDiscussionModal: React.FC<PostDiscussionModalProps> = ({
                     </div>
 
                     {/* Comment content */}
-                    <div className="flex-1 bg-[#16181c] border border-[#2f3336] rounded-2xl p-3 space-y-1">
+                    <div className="flex-1 bg-[#16181c] border border-[#2f3336] rounded-2xl p-3 space-y-1.5">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-xs font-bold text-white hover:underline cursor-pointer">
-                            {commentUser.username}
+                            {comment.username || commentUser.username}
                           </span>
                           <span className="text-[11px] text-[#71767b]">
                             {commentUser.handle} · {timeAgo(comment.created_at)}
                           </span>
                         </div>
-                        <button
-                          onClick={() => onReport(comment.id.toString(), true)}
-                          className="text-[11px] text-[#555] hover:text-[#ff2d55] opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="Report reply"
-                        >
-                          Report
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const authorName = comment.username || commentUser.username;
+                              setReplyingTo({
+                                id: comment.id,
+                                username: authorName.replace(/^@/, ''),
+                              });
+                              inputRef.current?.focus();
+                            }}
+                            className="text-[11px] text-[#71767b] hover:text-[#1d9bf0] transition-colors flex items-center gap-1 font-medium"
+                            title="Reply to comment"
+                          >
+                            <Reply size={12} />
+                            <span>Reply</span>
+                          </button>
+                          <button
+                            onClick={() => onReport(comment.id.toString(), true)}
+                            className="text-[11px] text-[#555] hover:text-[#ff2d55] opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Report reply"
+                          >
+                            Report
+                          </button>
+                        </div>
                       </div>
+
+                      {/* Replying to indicator */}
+                      {comment.tagged_username && (
+                        <div className="text-[12px] text-[#71767b] flex items-center gap-1 font-medium">
+                          <span>Replying to</span>
+                          <span className="text-[#1d9bf0] hover:underline cursor-pointer">
+                            @{comment.tagged_username.replace(/^@/, '')}
+                          </span>
+                        </div>
+                      )}
 
                       <p className="text-sm text-[#e7e9ea] leading-relaxed break-words whitespace-pre-wrap font-sans">
                         {formatTweetContent(comment.content)}
@@ -310,6 +333,23 @@ export const PostDiscussionModal: React.FC<PostDiscussionModalProps> = ({
 
         {/* Sticky Reply Input Bar at Bottom (X / Twitter style) */}
         <div className="sticky bottom-0 z-20 bg-black sm:bg-[#121214] border-t border-[#2f3336] px-3 py-2.5 sm:px-4 sm:py-3 shrink-0 pb-[max(12px,env(safe-area-inset-bottom))]">
+          {/* Active Reply Tag Pill */}
+          {replyingTo && (
+            <div className="flex items-center justify-between pb-2 px-1 text-xs text-[#71767b] animate-fade-in">
+              <span className="flex items-center gap-1">
+                Replying to <span className="text-[#1d9bf0] font-semibold">@{replyingTo.username}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setReplyingTo(null)}
+                className="text-[#71767b] hover:text-white transition-colors text-[11px] bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded-full flex items-center gap-1"
+              >
+                <span>Cancel</span>
+                <X size={11} />
+              </button>
+            </div>
+          )}
+
           <form onSubmit={handleSubmitReply} className="flex items-center gap-2 sm:gap-3 w-full">
             <div className="hidden xs:flex w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#202327] border border-white/10 items-center justify-center text-xs text-[#aaa] shrink-0">
               💬
@@ -320,7 +360,7 @@ export const PostDiscussionModal: React.FC<PostDiscussionModalProps> = ({
                 type="text"
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
-                placeholder="Post your reply anonymously..."
+                placeholder={replyingTo ? `Reply to @${replyingTo.username}...` : "Post your reply anonymously..."}
                 maxLength={300}
                 className="w-full bg-[#16181c] border border-[#2f3336] rounded-full px-3.5 py-2 sm:px-4 sm:py-2.5 text-[16px] sm:text-sm text-white placeholder-[#71767b] focus:outline-none focus:border-[#1d9bf0] transition-colors"
               />

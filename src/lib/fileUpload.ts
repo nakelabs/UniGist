@@ -1,4 +1,4 @@
-import { BASE_URL } from './api';
+import { BASE_URL, getOrCreateDeviceId } from './api';
 
 /**
  * Upload a Blob/File to POST /upload.
@@ -23,8 +23,12 @@ export const uploadFile = async (
   const formData = new FormData();
   formData.append('file', file, uniqueFileName);
 
+  const deviceId = getOrCreateDeviceId();
   const res = await fetch(`${BASE_URL}/upload`, {
     method: 'POST',
+    headers: {
+      'X-Device-ID': deviceId,
+    },
     body: formData,
     // Do NOT set Content-Type here — let the browser set the multipart boundary.
   });
@@ -50,9 +54,13 @@ export const deleteFile = async (
 ): Promise<void> => {
   console.log(`Deleting file: ${url}`);
 
+  const deviceId = getOrCreateDeviceId();
   const res = await fetch(`${BASE_URL}/upload`, {
     method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-Device-ID': deviceId,
+    },
     body: JSON.stringify({ url }),
   });
 

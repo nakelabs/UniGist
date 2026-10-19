@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { ConfessionWithComments } from '@/hooks/useConfessions';
-import { getGeneratedUser, getPostViews, formatTwitterNumber } from '@/lib/usernameGenerator';
+import { getGeneratedUser, formatTwitterNumber } from '@/lib/usernameGenerator';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { 
   Heart, 
   MessageCircle, 
-  BarChart2, 
   Share, 
   MoreHorizontal, 
   Volume2 
@@ -74,7 +73,6 @@ export const TwitterPostCard: React.FC<TwitterPostCardProps> = ({
   const [avatarError, setAvatarError] = useState(false);
 
   const user = getGeneratedUser(post.id);
-  const views = getPostViews(post.id, post.likes_count, post.comments?.length || 0);
 
   return (
     <article
@@ -196,8 +194,8 @@ export const TwitterPostCard: React.FC<TwitterPostCardProps> = ({
           </div>
         )}
 
-        {/* ── Action Bar (Reply, Like, Views, Bookmark, Share) ── */}
-        <div className="mt-3 flex items-center justify-between text-[#71767b] max-w-[420px] text-[13px] select-none -ml-2">
+        {/* ── Action Bar (Reply, Like, Share) ── */}
+        <div className="mt-3 flex items-center justify-between text-[#71767b] max-w-[260px] text-[13px] select-none -ml-2">
           {/* Reply */}
           <div 
             className="flex items-center gap-1.5 hover:text-[#1d9bf0] transition-colors group/action cursor-pointer"
@@ -238,29 +236,6 @@ export const TwitterPostCard: React.FC<TwitterPostCardProps> = ({
               {post.likes_count > 0 ? formatTwitterNumber(post.likes_count) : ''}
             </span>
           </div>
-
-          {/* Views / Impressions */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div 
-                className="flex items-center gap-1.5 hover:text-[#1d9bf0] transition-colors group/action cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenDiscussion(post);
-                }}
-              >
-                <div className="p-2 rounded-full group-hover/action:bg-[#1d9bf0]/10 transition-colors">
-                  <BarChart2 size={18} />
-                </div>
-                <span className="text-[13px] leading-none font-normal">
-                  {views}
-                </span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
-              {views} views · Vanishes in {expiresIn(post.created_at)}
-            </TooltipContent>
-          </Tooltip>
 
           {/* Share */}
           <div 

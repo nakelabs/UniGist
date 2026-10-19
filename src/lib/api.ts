@@ -2,13 +2,36 @@ export const BASE_URL = (
   import.meta.env.VITE_API_URL || 'https://yarnz-backend-kaevx6-ca79f6-187-77-177-128.sslip.io'
 ).replace(/\/+$/, '');
 
+/**
+ * Returns a persistent UUID for this device/browser client.
+ * Stored in localStorage so requests and heartbeats share the exact same ID.
+ */
+export const getOrCreateDeviceId = (): string => {
+  try {
+    let id = localStorage.getItem('device_id');
+    if (!id) {
+      if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        id = crypto.randomUUID();
+      } else {
+        id = 'dev-' + Math.random().toString(36).substring(2, 11) + '-' + Date.now().toString(36);
+      }
+      localStorage.setItem('device_id', id);
+    }
+    return id;
+  } catch {
+    return 'anonymous-device';
+  }
+};
+
 async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const deviceId = getOrCreateDeviceId();
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: {
       'Content-Type': 'application/json',
+      'X-Device-ID': deviceId,
       ...(options.headers ?? {}),
     },
     ...options,
@@ -36,12 +59,18 @@ export const api = {
       method: 'DELETE',
       ...(body ? { body: JSON.stringify(body) } : {}),
     }),
+  deleteConfession: (id: number | string) =>
+    request<DeleteResponse>(`/confessions/${id}`, { method: 'DELETE' }),
+  deleteComment: (id: number | string) =>
+    request<DeleteResponse>(`/comments/${id}`, { method: 'DELETE' }),
   postFormData: async <T>(path: string, formData: FormData): Promise<T> => {
+    const deviceId = getOrCreateDeviceId();
     const res = await fetch(`${BASE_URL}${path}`, {
       method: 'POST',
+      headers: {
+        'X-Device-ID': deviceId,
+      },
       body: formData,
-      // Note: do not set Content-Type header when sending FormData
-      // fetch will automatically set it to multipart/form-data with the correct boundary
     });
     if (!res.ok) {
       const errorBody = await res.text();
@@ -50,6 +79,25 @@ export const api = {
     return res.json() as Promise<T>;
   }
 };
+
+/**
+ * Ping backend heartbeat to keep user counted as "online" when idle.
+ */
+export async function sendHeartbeat(): Promise<void> {
+  try {
+    const deviceId = getOrCreateDeviceId();
+    await fetch(`${BASE_URL}/heartbeat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-ID': deviceId,
+      },
+      body: JSON.stringify({ device_id: deviceId }),
+    });
+  } catch (err) {
+    console.debug('Heartbeat ping failed:', err);
+  }
+}
 
 // ─── Database types ──────────────────────────────────────────────
 
@@ -63,6 +111,7 @@ export interface Confession {
   caption?: string | null;
   tags: string[];
   likes_count: number;
+  is_deleted?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -73,6 +122,9 @@ export interface Comment {
   content: string;
   is_anonymous: boolean;
   username?: string | null;
+  tagged_comment_id?: number | null;
+  tagged_username?: string | null;
+  is_deleted?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -100,28 +152,55 @@ export interface LikeResponse {
   message: string;
 }
 
+export interface DeleteResponse {
+  status: string;
+  message: string;
+  id: number;
+}
+
+export interface MediaBreakdown {
+  text: number;
+  image: number;
+  video: number;
+  audio: number;
+}
+
+export interface AdminStats {
+  total_posts?: number;
+  total_confessions?: number;
+  active_confessions?: number;
+  deleted_confessions?: number;
+  total_comments?: number;
+  active_comments?: number;
+  deleted_comments?: number;
+  total_likes?: number;
+  online_users?: number;
+  media_breakdown?: MediaBreakdown;
+  total_reports?: number;
+  pending_reports?: number;
+  total_users?: number;
+  total_visits?: number;
+  active_users?: number;
+}
+
+export interface OnlineUsersResponse {
+  online_users: number;
+  window_minutes: number;
+}
+
+export interface Report {
+  id: string;
+  target_type: 'confession' | 'comment';
+  target_id: string;
+  reason: string;
+  custom_reason?: string;
+  status: 'pending' | 'resolved' | 'dismissed';
+  created_at: string;
+  updated_at: string;
+}
+
 // ─── User fingerprint helper ──────────────────────────────────────────────────
 
 export const generateUserFingerprint = (): string => {
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  ctx!.textBaseline = 'top';
-  ctx!.font = '14px Arial';
-  ctx!.fillText('User fingerprint', 2, 2);
-
-  const fingerprint = [
-    navigator.userAgent,
-    navigator.language,
-    screen.width + 'x' + screen.height,
-    new Date().getTimezoneOffset(),
-    canvas.toDataURL(),
-  ].join('|');
-
-  let hash = 0;
-  for (let i = 0; i < fingerprint.length; i++) {
-    const char = fingerprint.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return Math.abs(hash).toString(36);
+  return getOrCreateDeviceId();
 };

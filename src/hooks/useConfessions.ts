@@ -113,7 +113,8 @@ export const useConfessions = () => {
   const addComment = async (
     confessionId: number,
     content: string,
-    isAnonymous: boolean = true
+    isAnonymous: boolean = true,
+    taggedCommentId?: number | null
   ) => {
     try {
       const data = await api.post<Comment>(
@@ -122,6 +123,7 @@ export const useConfessions = () => {
           content,
           is_anonymous: isAnonymous,
           username: isAnonymous ? undefined : 'User',
+          tagged_comment_id: taggedCommentId ?? null,
         }
       );
 
@@ -139,7 +141,9 @@ export const useConfessions = () => {
 
       toast({
         title: 'Comment Added! 💬',
-        description: 'Your anonymous reply has been posted',
+        description: data.tagged_username 
+          ? `Replying to @${data.tagged_username}` 
+          : 'Your anonymous reply has been posted',
       });
 
       return data;
@@ -148,6 +152,54 @@ export const useConfessions = () => {
       toast({
         title: 'Error adding comment',
         description: 'Failed to add your comment. Please try again.',
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
+  const deleteConfession = async (id: number) => {
+    try {
+      const res = await api.deleteConfession(id);
+      setConfessions((prev) => prev.filter((c) => c.id !== id));
+      toast({
+        title: 'Post Deleted',
+        description: res?.message || `Confession ${id} and associated comments were soft-deleted`,
+      });
+      return res;
+    } catch (error) {
+      console.error('Error deleting confession:', error);
+      toast({
+        title: 'Error deleting post',
+        description: 'Failed to delete confession. Please try again.',
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
+  const deleteComment = async (commentId: number, confessionId?: number) => {
+    try {
+      const res = await api.deleteComment(commentId);
+      setConfessions((prev) =>
+        prev.map((c) => {
+          if (confessionId && c.id !== confessionId) return c;
+          return {
+            ...c,
+            comments: c.comments.filter((cm) => cm.id !== commentId),
+          };
+        })
+      );
+      toast({
+        title: 'Comment Deleted',
+        description: res?.message || `Comment ${commentId} was soft-deleted`,
+      });
+      return res;
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      toast({
+        title: 'Error deleting comment',
+        description: 'Failed to delete comment. Please try again.',
         variant: 'destructive',
       });
       throw error;
@@ -199,6 +251,8 @@ export const useConfessions = () => {
     loading,
     createConfession,
     addComment,
+    deleteConfession,
+    deleteComment,
     toggleComments,
     updateVoteCount,
     refetch: fetchConfessions,

@@ -10,7 +10,7 @@ import { useConfessions, ConfessionWithComments } from '@/hooks/useConfessions';
 import { useVotes } from '@/hooks/useVotes';
 import { useReports } from '@/hooks/useReports';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { Heart, Share, Share2, HelpCircle, MessageCircle, Clock, MoreHorizontal, Repeat2, BarChart2 } from 'lucide-react';
+import { Heart, Share, Share2, HelpCircle, MessageCircle, Clock, MoreHorizontal } from 'lucide-react';
 import { getGeneratedUser } from '@/lib/usernameGenerator';
 import { timeAgo, expiresIn } from '@/lib/dateUtils';
 
@@ -182,6 +182,10 @@ const Index = () => {
     tags?: string[]; 
   }) => {
     try { await createConfession(data); } catch { /* toast handled inside hook */ }
+  };
+
+  const handleAddComment = async (postId: number, content: string, taggedCommentId?: number | null) => {
+    await addComment(postId, content, true, taggedCommentId);
   };
 
   const handleToggleLike = async (id: number) => {
@@ -405,7 +409,7 @@ const Index = () => {
         post={discussionPost}
         onVote={handleToggleLike}
         hasLiked={discussionPost ? (likedConfessions[discussionPost.id] || false) : false}
-        onAddComment={addComment}
+        onAddComment={handleAddComment}
         onReport={handleReport}
         onShare={handleShare}
         timeAgo={timeAgo}
