@@ -53,6 +53,22 @@
     @apply border-border;
   }
 
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Prevent iOS Safari automatic zoom on inputs/textareas */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+  @media (min-width: 640px) {
+    input, textarea, select {
+      font-size: 14px !important;
+    }
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     background-color: #111111;

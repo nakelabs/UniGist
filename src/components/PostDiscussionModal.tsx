@@ -75,10 +75,10 @@ export const PostDiscussionModal: React.FC<PostDiscussionModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex flex-col justify-end sm:justify-center items-center">
-      {/* Container - full screen on mobile, styled card on desktop */}
+    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex flex-col justify-end sm:justify-center items-center overflow-hidden overscroll-none">
+      {/* Container - full screen on mobile with dynamic viewport height, styled card on desktop */}
       <div 
-        className="w-full h-full sm:max-w-[620px] sm:h-[92vh] bg-black sm:border sm:border-[#2f3336] sm:rounded-2xl flex flex-col overflow-hidden shadow-2xl animate-fade-in"
+        className="w-full h-[100dvh] sm:max-w-[620px] sm:h-[90vh] bg-black sm:border sm:border-[#2f3336] sm:rounded-2xl flex flex-col overflow-hidden shadow-2xl animate-fade-in"
       >
         {/* Top App Bar (X Style) */}
         <div className="sticky top-0 z-20 bg-black/90 backdrop-blur-xl border-b border-[#2f3336] px-4 h-14 flex items-center justify-between shrink-0">
@@ -318,12 +318,12 @@ export const PostDiscussionModal: React.FC<PostDiscussionModalProps> = ({
 
 
         {/* Sticky Reply Input Bar at Bottom (X / Twitter style) */}
-        <div className="sticky bottom-0 z-20 bg-black sm:bg-[#121214] border-t border-white/10 px-4 py-3 shrink-0">
-          <form onSubmit={handleSubmitReply} className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#202327] border border-white/10 flex items-center justify-center text-xs text-[#aaa] font-bold shrink-0">
+        <div className="sticky bottom-0 z-20 bg-black sm:bg-[#121214] border-t border-[#2f3336] px-3 py-2.5 sm:px-4 sm:py-3 shrink-0 pb-[max(12px,env(safe-area-inset-bottom))]">
+          <form onSubmit={handleSubmitReply} className="flex items-center gap-2 sm:gap-3 w-full">
+            <div className="hidden xs:flex w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#202327] border border-white/10 items-center justify-center text-xs text-[#aaa] shrink-0">
               💬
             </div>
-            <div className="flex-1 relative flex items-center">
+            <div className="flex-1 min-w-0 relative">
               <input
                 ref={inputRef}
                 type="text"
@@ -331,13 +331,13 @@ export const PostDiscussionModal: React.FC<PostDiscussionModalProps> = ({
                 onChange={(e) => setReplyText(e.target.value)}
                 placeholder="Post your reply anonymously..."
                 maxLength={300}
-                className="w-full bg-[#16181c] border border-white/10 rounded-full px-4 py-2.5 text-sm text-white placeholder-[#71767b] focus:outline-none focus:border-[#1d9bf0] transition-colors pr-10"
+                className="w-full bg-[#16181c] border border-[#2f3336] rounded-full px-3.5 py-2 sm:px-4 sm:py-2.5 text-[16px] sm:text-sm text-white placeholder-[#71767b] focus:outline-none focus:border-[#1d9bf0] transition-colors"
               />
             </div>
             <button
               type="submit"
               disabled={!replyText.trim() || isSubmitting}
-              className="bg-[#1d9bf0] hover:bg-[#1a8cd8] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs px-4 py-2.5 rounded-full transition-all active:scale-95 shrink-0 flex items-center gap-1.5 shadow-md shadow-[#1d9bf0]/20"
+              className="bg-[#1d9bf0] hover:bg-[#1a8cd8] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs sm:text-sm px-3.5 py-2 sm:px-4.5 sm:py-2.5 rounded-full transition-all active:scale-95 shrink-0 whitespace-nowrap flex items-center gap-1.5 shadow-md shadow-[#1d9bf0]/20"
             >
               {isSubmitting ? (
                 <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

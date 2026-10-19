@@ -97,13 +97,13 @@ function CommentSection({ postId, comments, onAddComment, onReport }: CommentSec
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }}}
           placeholder="Add a reply..."
-          className="flex-1 bg-transparent text-[14px] text-white placeholder-[#444] focus:outline-none"
+          className="flex-1 min-w-0 bg-transparent text-[16px] sm:text-[14px] text-white placeholder-[#444] focus:outline-none"
           maxLength={280}
         />
         <button
           onClick={submit}
           disabled={!value.trim() || busy}
-          className="text-[#ff2d55] disabled:text-[#444] transition-colors text-xs font-semibold tracking-wide"
+          className="text-[#ff2d55] disabled:text-[#444] transition-colors text-xs font-semibold tracking-wide shrink-0 whitespace-nowrap px-1"
         >
           Reply
         </button>
