@@ -248,17 +248,17 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
         />
 
         {/* Bottom toolbar */}
-        <div className="py-2 flex items-center justify-between">
+        <div className="py-2 flex items-center justify-between gap-2">
           {/* Media / tag toggles */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 xs:gap-1.5 shrink min-w-0 overflow-x-auto no-scrollbar">
             <Tooltip>
               <TooltipTrigger asChild>
                 <label
                   htmlFor="image-upload"
-                  className={`action-btn cursor-pointer text-xs font-semibold tracking-wide flex items-center gap-1 ${(imageUrl) ? 'text-[#ff2d55]' : ''}`}
+                  className={`action-btn cursor-pointer text-xs font-semibold tracking-wide flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl transition-colors shrink-0 ${(imageUrl) ? 'text-[#ff2d55] bg-[#ff2d55]/10' : ''}`}
                 >
-                  <Image size={14} />
-                  <span>Photo</span>
+                  <Image size={15} />
+                  <span className="hidden xs:inline">Photo</span>
                 </label>
               </TooltipTrigger>
               <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
@@ -270,10 +270,10 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
               <TooltipTrigger asChild>
                 <label
                   htmlFor="video-upload"
-                  className={`action-btn cursor-pointer text-xs font-semibold tracking-wide flex items-center gap-1 ${(videoUrl) ? 'text-[#a855f7]' : ''}`}
+                  className={`action-btn cursor-pointer text-xs font-semibold tracking-wide flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl transition-colors shrink-0 ${(videoUrl) ? 'text-[#a855f7] bg-[#a855f7]/10' : ''}`}
                 >
-                  <Video size={14} />
-                  <span>Video</span>
+                  <Video size={15} />
+                  <span className="hidden xs:inline">Video</span>
                 </label>
               </TooltipTrigger>
               <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
@@ -286,10 +286,10 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
                 <button
                   type="button"
                   onClick={() => setShowAudioRecorder(!showAudioRecorder)}
-                  className={`action-btn text-xs font-semibold tracking-wide flex items-center gap-1 ${showAudioRecorder || audioUrl ? 'text-[#0ea5e9]' : ''}`}
+                  className={`action-btn text-xs font-semibold tracking-wide flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl transition-colors shrink-0 ${showAudioRecorder || audioUrl ? 'text-[#0ea5e9] bg-[#0ea5e9]/10' : ''}`}
                 >
-                  <Mic size={14} />
-                  <span>Audio</span>
+                  <Mic size={15} />
+                  <span className="hidden xs:inline">Audio</span>
                 </button>
               </TooltipTrigger>
               <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
@@ -302,10 +302,11 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
                 <button
                   type="button"
                   onClick={() => setShowTagSection(!showTagSection)}
-                  className={`action-btn text-xs font-semibold tracking-wide flex items-center gap-1 ${showTagSection || tags.length > 0 ? 'text-[#7c3aed]' : ''}`}
+                  className={`action-btn text-xs font-semibold tracking-wide flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl transition-colors shrink-0 ${showTagSection || tags.length > 0 ? 'text-[#7c3aed] bg-[#7c3aed]/10' : ''}`}
                 >
-                  <Tag size={14} />
-                  <span>Tags{tags.length > 0 && <span className="ml-1 text-[#7c3aed]">({tags.length})</span>}</span>
+                  <Tag size={15} />
+                  <span className="hidden xs:inline">Tags</span>
+                  {tags.length > 0 && <span className="text-[#7c3aed] font-bold ml-0.5">({tags.length})</span>}
                 </button>
               </TooltipTrigger>
               <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
@@ -315,27 +316,29 @@ const ConfessionForm = ({ onSubmit }: ConfessionFormProps) => {
           </div>
 
           {/* Post button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="submit"
-                disabled={!canPost}
-                className="btn-brand"
-              >
-                {isSubmitting ? (
-                  <span className="flex items-center gap-2">
-                    <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Yarning
-                  </span>
-                ) : (
-                  <span>Yarn it</span>
-                )}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
-              {canPost ? 'Post your secret anonymously (disappears in 24h)' : 'Add text, audio, photo, or video to post'}
-            </TooltipContent>
-          </Tooltip>
+          <div className="shrink-0">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="submit"
+                  disabled={!canPost}
+                  className="btn-brand whitespace-nowrap px-4 py-2 sm:px-5 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold shrink-0 flex items-center justify-center active:scale-95 shadow-md"
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Yarning...</span>
+                    </span>
+                  ) : (
+                    <span>Yarn it</span>
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
+                {canPost ? 'Post your secret anonymously (disappears in 24h)' : 'Add text, audio, photo, or video to post'}
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </form>
     </div>

@@ -1,7 +1,7 @@
 const PageHeader = () => {
   return (
-    <header className="sticky top-0 z-50 bg-[#111111]/95 backdrop-blur-xl border-b border-[#1e1e1e]">
-      <div className="max-w-[680px] mx-auto px-4 h-14 flex items-center justify-between">
+    <header className="sticky top-0 z-50 bg-black/85 backdrop-blur-md border-b border-[#2f3336]">
+      <div className="max-w-[600px] mx-auto px-4 h-13 py-2.5 flex items-center justify-between">
         {/* Wordmark */}
         <div className="flex items-center gap-2.5">
           <span

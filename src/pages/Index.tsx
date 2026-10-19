@@ -4,28 +4,16 @@ import ConfessionForm from '@/components/ConfessionForm';
 import PageFooter from '@/components/PageFooter';
 import ReportModal from '@/components/ReportModal';
 import ShareModal from '@/components/ShareModal';
+import PostDiscussionModal from '@/components/PostDiscussionModal';
+import TwitterPostCard from '@/components/TwitterPostCard';
 import { useConfessions, ConfessionWithComments } from '@/hooks/useConfessions';
 import { useVotes } from '@/hooks/useVotes';
 import { useReports } from '@/hooks/useReports';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { Heart, Share2, HelpCircle } from 'lucide-react';
+import { Heart, Share, Share2, HelpCircle, MessageCircle, Clock, MoreHorizontal, Repeat2, BarChart2 } from 'lucide-react';
+import { getGeneratedUser } from '@/lib/usernameGenerator';
+import { timeAgo, expiresIn } from '@/lib/dateUtils';
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  return `${Math.floor(h / 24)}d`;
-}
-
-function expiresIn(dateStr: string): string {
-  const hrs = Math.max(0, 24 - Math.floor((Date.now() - new Date(dateStr).getTime()) / 3600000));
-  return hrs === 0 ? 'expiring soon' : `${hrs}h left`;
-}
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
@@ -135,6 +123,7 @@ const Index = () => {
   const [isReportingComment, setIsReportingComment] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [sharingPost, setSharingPost] = useState<ConfessionWithComments | null>(null);
+  const [discussionPost, setDiscussionPost] = useState<ConfessionWithComments | null>(null);
   const [expandedComments, setExpandedComments] = useState<Set<number>>(new Set());
 
   const { confessions, loading, createConfession, addComment, updateVoteCount, refetch } = useConfessions();
@@ -150,20 +139,32 @@ const Index = () => {
     });
   }, [confessions]);
 
-  // Deep-link auto-scroll when opened via shared post link
+  // Keep active discussion post in sync with refreshed confessions data
+  useEffect(() => {
+    if (discussionPost) {
+      const fresh = confessions.find((c) => c.id === discussionPost.id);
+      if (fresh) setDiscussionPost(fresh);
+    }
+  }, [confessions]);
+
+  // Deep-link auto-open or scroll when opened via shared post link
   useEffect(() => {
     if (!loading && confessions.length > 0) {
       const hash = window.location.hash;
       const params = new URLSearchParams(window.location.search);
       const targetId = params.get('post') || (hash.startsWith('#post-') ? hash.replace('#post-', '') : null);
       if (targetId) {
+        const matchingPost = confessions.find((c) => c.id.toString() === targetId);
+        if (matchingPost) {
+          setDiscussionPost(matchingPost);
+        }
         setTimeout(() => {
           const el = document.getElementById(`post-${targetId}`);
           if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            el.classList.add('ring-2', 'ring-[#ff2d55]', 'ring-offset-2', 'ring-offset-[#111]');
+            el.classList.add('ring-2', 'ring-[#1d9bf0]', 'ring-offset-2', 'ring-offset-[#111]');
             setTimeout(() => {
-              el.classList.remove('ring-2', 'ring-[#ff2d55]', 'ring-offset-2', 'ring-offset-[#111]');
+              el.classList.remove('ring-2', 'ring-[#1d9bf0]', 'ring-offset-2', 'ring-offset-[#111]');
             }, 3000);
           }
         }, 350);
@@ -235,39 +236,41 @@ const Index = () => {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-[#111111]">
+    <div className="min-h-screen bg-black text-[#e7e9ea]">
       <PageHeader />
 
-      <main className="max-w-[680px] mx-auto px-4 py-4 space-y-3">
+      <main className="max-w-[600px] mx-auto min-h-screen border-x border-[#2f3336] bg-black">
 
         {/* ── Compose box ── */}
-        {showCompose ? (
-          <div className="relative animate-fade-in">
+        <div className="border-b border-[#2f3336] p-4">
+          {showCompose ? (
+            <div className="relative animate-fade-in">
+              <button 
+                onClick={() => setShowCompose(false)} 
+                className="absolute -right-1 -top-1 w-7 h-7 flex items-center justify-center text-[#555] hover:text-[#ff2d55] bg-[#111] hover:bg-[#222] rounded-full text-base z-10 transition-colors"
+                title="Hide form"
+              >
+                ×
+              </button>
+              <ConfessionForm onSubmit={handleSubmit} />
+            </div>
+          ) : (
             <button 
-              onClick={() => setShowCompose(false)} 
-              className="absolute -right-2 -top-2 w-8 h-8 flex items-center justify-center text-[#555] hover:text-[#ff2d55] bg-[#111] hover:bg-[#222] rounded-full text-xl z-10 transition-colors"
-              title="Hide form"
+              onClick={() => setShowCompose(true)}
+              className="w-full bg-[#16181c] border border-white/5 rounded-full px-5 py-3 text-left text-[#555] hover:border-white/20 transition-all flex items-center justify-between group"
             >
-              ×
+              <span>Share something anonymously...</span>
+              <span className="text-[#1d9bf0] opacity-0 group-hover:opacity-100 transition-opacity font-semibold text-xs">Yarn it</span>
             </button>
-            <ConfessionForm onSubmit={handleSubmit} />
-          </div>
-        ) : (
-          <button 
-            onClick={() => setShowCompose(true)}
-            className="w-full bg-[#1e1e1e]/40 backdrop-blur-md border border-white/5 rounded-[16px] px-5 py-4 text-left text-[#555] hover:border-white/20 transition-all duration-300 flex items-center justify-between group mb-4"
-          >
-            <span>Share something anonymously...</span>
-            <span className="text-[#ff2d55] opacity-0 group-hover:opacity-100 transition-opacity font-semibold">Yarn it</span>
-          </button>
-        )}
+          )}
+        </div>
 
         {/* Quick guide for new users */}
-        <div className="flex items-center justify-between px-1 text-xs text-[#666]">
+        <div className="flex items-center justify-between px-4 py-2 border-b border-[#2f3336] text-xs text-[#71767b] bg-[#16181c]/30">
           <Tooltip>
             <TooltipTrigger asChild>
-              <button type="button" className="flex items-center gap-1.5 hover:text-[#ff2d55] transition-colors py-0.5">
-                <HelpCircle size={13} className="text-[#ff2d55]" />
+              <button type="button" className="flex items-center gap-1.5 hover:text-[#1d9bf0] transition-colors py-0.5">
+                <HelpCircle size={13} className="text-[#1d9bf0]" />
                 <span>How Yarnz works</span>
               </button>
             </TooltipTrigger>
@@ -282,11 +285,11 @@ const Index = () => {
             </TooltipContent>
           </Tooltip>
 
-          <span className="text-[11px] text-[#555]">All yarns vanish in 24h</span>
+          <span className="text-[11px] text-[#71767b]">All yarns vanish in 24h</span>
         </div>
 
         {/* ── Filter bar ── */}
-        <div className="flex items-center gap-2 py-1">
+        <div className="px-4 py-2.5 border-b border-[#2f3336] flex items-center gap-2">
           {/* Search */}
           <div className="relative flex-1">
             <input
@@ -294,17 +297,17 @@ const Index = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search yarns..."
-              className="w-full bg-[#1e1e1e]/40 backdrop-blur-md border border-white/5 rounded-[16px] pl-4 pr-8 py-2 text-sm text-white placeholder-[#555] focus:outline-none focus:border-white/20 transition-all duration-300"
+              className="w-full bg-[#16181c] border border-transparent rounded-full pl-4 pr-8 py-2 text-sm text-white placeholder-[#71767b] focus:outline-none focus:border-[#1d9bf0] transition-colors"
             />
             {searchTerm && (
-              <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555] hover:text-white text-base leading-none font-bold">
+              <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#71767b] hover:text-white text-base leading-none font-bold">
                 ×
               </button>
             )}
           </div>
 
           {/* Sort tabs */}
-          <div className="flex items-center gap-0.5 bg-[#1e1e1e]/40 backdrop-blur-md border border-white/5 rounded-[16px] p-1">
+          <div className="flex items-center gap-0.5 bg-[#16181c] border border-white/5 rounded-full p-1">
             {(['newest', 'top'] as const).map((s) => (
               <Tooltip key={s}>
                 <TooltipTrigger asChild>
@@ -325,7 +328,7 @@ const Index = () => {
           {/* Refresh */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <button onClick={() => refetch()} className="action-btn p-2 text-xs font-semibold tracking-wide">
+              <button onClick={() => refetch()} className="w-8 h-8 rounded-full flex items-center justify-center text-[#71767b] hover:text-white hover:bg-white/10 transition-colors">
                 ↺
               </button>
             </TooltipTrigger>
@@ -354,167 +357,21 @@ const Index = () => {
             )}
           </div>
         ) : (
-          <div className="space-y-3">
-            {feed.map((post) => {
-              const hasLiked = likedConfessions[post.id] || false;
-              const commentsOpen = expandedComments.has(post.id);
+          <div className="divide-y divide-[#2f3336]">
+            {feed.map((post) => (
+              <TwitterPostCard
+                key={post.id}
+                post={post}
+                hasLiked={likedConfessions[post.id] || false}
+                onLike={handleToggleLike}
+                onOpenDiscussion={setDiscussionPost}
+                onShare={handleShare}
+                onReport={(id) => handleReport(id, false)}
+                timeAgo={timeAgo}
+                expiresIn={expiresIn}
+              />
+            ))}
 
-              return (
-                <article key={post.id} id={`post-${post.id}`} className="post-card animate-fade-up">
-                  {/* ── Post header ── */}
-                  <div className="flex items-center justify-between px-4 pt-3 pb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#ff2d55] to-[#7c3aed] flex-shrink-0" />
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-[13px] font-semibold text-[#ccc]">
-                            anon #{post.id.toString().slice(-6)}
-                          </p>
-                        </div>
-                        <p className="text-[11px] text-[#555] flex items-center gap-1">
-                          {timeAgo(post.created_at)}
-                          <span className="text-[#333]">·</span>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="text-[#ff2d55]/70 cursor-help">{expiresIn(post.created_at)}</span>
-                            </TooltipTrigger>
-                            <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
-                              Auto-deletes 24 hours after creation
-                            </TooltipContent>
-                          </Tooltip>
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleReport(post.id.toString())}
-                      className="action-btn p-1.5 text-xs font-medium text-[#444] hover:text-[#ff2d55]"
-                      title="Report"
-                    >
-                      Report
-                    </button>
-                  </div>
-
-                  {/* ── Content ── */}
-                  {post.text_content && (
-                    <div className="px-4 pb-3">
-                      <p className="text-[15px] text-[#e8e8e8] leading-relaxed whitespace-pre-wrap break-words">
-                        {post.text_content}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* ── Tags ── */}
-                  {post.tags && post.tags.length > 0 && (
-                    <div className="px-4 pb-3 flex flex-wrap gap-1.5">
-                      {post.tags.map((t) => (
-                        <span key={t} className="tag-pill">#{t}</span>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* ── Image ── */}
-                  {post.image_url && (
-                    <div className="px-4 pb-3 flex justify-center bg-black/20 rounded-xl overflow-hidden mx-4">
-                      <img
-                        src={post.image_url}
-                        alt="Post"
-                        className="w-full object-contain max-h-[500px]"
-                      />
-                    </div>
-                  )}
-
-                  {/* ── Audio ── */}
-                  {post.audio_url && (
-                    <div className="px-4 pb-3">
-                      <audio controls src={post.audio_url} className="w-full h-10" />
-                    </div>
-                  )}
-
-                  {/* ── Video ── */}
-                  {post.video_url && (
-                    <div className="px-4 pb-3">
-                      <video controls src={post.video_url} className="w-full rounded-xl" />
-                    </div>
-                  )}
-
-                  {/* ── Actions ── */}
-                  <div className="divider" />
-                  <div className="px-4 py-2 flex items-center gap-1">
-                    {/* Like */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => handleToggleLike(post.id)}
-                          className={`action-btn text-xs font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors ${hasLiked ? 'active text-[#ff2d55] bg-[#ff2d55]/10' : 'text-[#888] hover:text-white hover:bg-white/5'}`}
-                        >
-                          <Heart size={16} fill={hasLiked ? "currentColor" : "none"} strokeWidth={hasLiked ? 0 : 2} className={hasLiked ? "scale-110 transition-transform" : ""} />
-                          <span className="text-sm">{post.likes_count}</span>
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
-                        {hasLiked ? 'Unlike confession' : 'Like anonymously'}
-                      </TooltipContent>
-                    </Tooltip>
-
-                    {/* Comments */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => toggleComments(post.id)}
-                          className={`action-btn text-xs font-semibold ${commentsOpen ? 'text-white' : ''}`}
-                        >
-                          <span className="text-xs">{post.comments.length} replies</span>
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
-                        {commentsOpen ? 'Hide replies' : 'Read or post anonymous replies'}
-                      </TooltipContent>
-                    </Tooltip>
-
-                    {/* Share */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => handleShare(post)}
-                          className="action-btn text-xs font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors text-[#888] hover:text-white hover:bg-white/5"
-                        >
-                          <Share2 size={15} />
-                          <span className="text-xs">Share</span>
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
-                        Share to WhatsApp, Telegram, or copy link
-                      </TooltipContent>
-                    </Tooltip>
-
-                    {/* Report */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => handleReport(post.id.toString())}
-                          className="action-btn ml-auto text-xs font-medium text-[#444] hover:text-[#ff2d55]"
-                        >
-                          Report
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent className="bg-[#1c1c1f] text-[#eee] border-white/10 text-xs">
-                        Report inappropriate or harmful content
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-
-                  {/* ── Comments ── */}
-                  {commentsOpen && (
-                    <CommentSection
-                      postId={post.id}
-                      comments={post.comments}
-                      onAddComment={(postId, content) => addComment(postId, content).then(() => {})}
-                      onReport={handleReport}
-                    />
-                  )}
-                </article>
-              );
-            })}
 
             {/* Bottom count */}
             {feed.length > 0 && (
@@ -540,6 +397,19 @@ const Index = () => {
         isOpen={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
         post={sharingPost}
+      />
+
+      <PostDiscussionModal
+        isOpen={!!discussionPost}
+        onClose={() => setDiscussionPost(null)}
+        post={discussionPost}
+        onVote={handleToggleLike}
+        hasLiked={discussionPost ? (likedConfessions[discussionPost.id] || false) : false}
+        onAddComment={addComment}
+        onReport={handleReport}
+        onShare={handleShare}
+        timeAgo={timeAgo}
+        expiresIn={expiresIn}
       />
     </div>
   );
