@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ConfessionWithComments } from '@/hooks/useConfessions';
 import { Share2, Copy, Check, X, Smartphone, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -13,6 +14,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, post })
   const { toast } = useToast();
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
+
+  // Lock background body scroll completely on iOS and desktop
+  useBodyScrollLock(isOpen);
 
   if (!isOpen || !post) return null;
 

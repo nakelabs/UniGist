@@ -4,6 +4,7 @@ import { ArrowLeft, Heart, MessageCircle, Share2, Clock, Send, MoreHorizontal, B
 import { getGeneratedUser, getPostViews, formatTwitterNumber } from '@/lib/usernameGenerator';
 import { formatTweetContent } from './TwitterPostCard';
 import { timeAgo as formatTimeAgo, expiresIn as formatExpiresIn } from '@/lib/dateUtils';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 interface PostDiscussionModalProps {
   isOpen: boolean;
@@ -36,18 +37,8 @@ export const PostDiscussionModal: React.FC<PostDiscussionModalProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      // Auto-focus input slightly delayed
-      setTimeout(() => inputRef.current?.focus(), 200);
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
+  // Lock background body scroll completely on iOS and desktop
+  useBodyScrollLock(isOpen);
 
   if (!isOpen || !post) return null;
 
@@ -75,10 +66,10 @@ export const PostDiscussionModal: React.FC<PostDiscussionModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex flex-col justify-end sm:justify-center items-center overflow-hidden overscroll-none">
+    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex flex-col justify-end sm:justify-center items-center overflow-hidden overscroll-none touch-none">
       {/* Container - full screen on mobile with dynamic viewport height, styled card on desktop */}
       <div 
-        className="w-full h-[100dvh] sm:max-w-[620px] sm:h-[90vh] bg-black sm:border sm:border-[#2f3336] sm:rounded-2xl flex flex-col overflow-hidden shadow-2xl animate-fade-in"
+        className="w-full h-[100dvh] sm:max-w-[620px] sm:h-[90vh] bg-black sm:border sm:border-[#2f3336] sm:rounded-2xl flex flex-col overflow-hidden shadow-2xl animate-fade-in touch-auto"
       >
         {/* Top App Bar (X Style) */}
         <div className="sticky top-0 z-20 bg-black/90 backdrop-blur-xl border-b border-[#2f3336] px-4 h-14 flex items-center justify-between shrink-0">
@@ -108,7 +99,7 @@ export const PostDiscussionModal: React.FC<PostDiscussionModalProps> = ({
         </div>
 
         {/* Scrollable thread content */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4 overscroll-contain touch-pan-y">
           {/* Main Original Post */}
           <div className="space-y-3 pb-3 border-b border-[#2f3336]">
             {/* Author row */}

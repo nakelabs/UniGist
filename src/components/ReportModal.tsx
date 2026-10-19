@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -69,6 +70,9 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, onSubmit, po
   const [selectedReason, setSelectedReason] = useState<string>('');
   const [customReason, setCustomReason] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Lock background body scroll completely on iOS and desktop
+  useBodyScrollLock(isOpen);
 
   const handleSubmit = async () => {
     if (!selectedReason) return;
